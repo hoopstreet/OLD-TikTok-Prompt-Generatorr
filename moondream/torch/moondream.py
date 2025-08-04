@@ -49,7 +49,7 @@ ObjectSamplingSettings = TypedDict(
 
 DEFAULT_MAX_TOKENS = 768
 DEFAULT_TEMPERATURE = 0.5
-DEFAULT_TOP_P = 0.3
+DEFAULT_TOP_P = 0.9
 DEFAULT_MAX_OBJECTS = 50
 
 
@@ -99,32 +99,14 @@ class MoondreamModel(nn.Module):
                 "coord_encoder": linear_cls(
                     config.region.coord_feat_dim, config.region.dim, dtype=dtype
                 ),
-                "coord_decoder": nn.ModuleDict(
-                    {
-                        "fc1": linear_cls(
-                            config.region.dim, config.region.inner_dim, dtype=dtype
-                        ),
-                        "fc2": linear_cls(
-                            config.region.inner_dim,
-                            config.region.coord_out_dim,
-                            dtype=dtype,
-                        ),
-                    }
+                "coord_decoder": linear_cls(
+                    config.region.dim, config.region.coord_out_dim, dtype=dtype
                 ),
                 "size_encoder": linear_cls(
                     config.region.size_feat_dim, config.region.dim, dtype=dtype
                 ),
-                "size_decoder": nn.ModuleDict(
-                    {
-                        "fc1": linear_cls(
-                            config.region.dim, config.region.inner_dim, dtype=dtype
-                        ),
-                        "fc2": linear_cls(
-                            config.region.inner_dim,
-                            config.region.size_out_dim,
-                            dtype=dtype,
-                        ),
-                    }
+                "size_decoder": linear_cls(
+                    config.region.dim, config.region.size_out_dim, dtype=dtype
                 ),
             }
         )
@@ -239,7 +221,7 @@ class MoondreamModel(nn.Module):
 
         lora = (
             variant_state_dict(settings["variant"], device=self.device)
-            if settings is not None and settings["variant"] is not None
+            if settings is not None and "variant" in settings
             else None
         )
 
@@ -360,7 +342,9 @@ class MoondreamModel(nn.Module):
         text_token_chunks = [[]]
         grounding_chunks = [[]]
 
-        mask = torch.zeros(1, 1, 2048, device=self.device, dtype=torch.bool)
+        mask = torch.zeros(
+            1, 1, self.config.text.max_context, device=self.device, dtype=torch.bool
+        )
         mask[:, :, :pos] = 1
         pos_ids = torch.tensor([pos], device=self.device, dtype=torch.long)
         generated_tokens = 0
@@ -469,7 +453,9 @@ class MoondreamModel(nn.Module):
         )
 
         def generator(next_token, pos):
-            mask = torch.zeros(1, 1, 2048, device=self.device, dtype=torch.bool)
+            mask = torch.zeros(
+                1, 1, self.config.text.max_context, device=self.device, dtype=torch.bool
+            )
             mask[:, :, :pos] = 1
             pos_ids = torch.tensor([pos], device=self.device, dtype=torch.long)
             generated_tokens = 0
@@ -660,7 +646,9 @@ class MoondreamModel(nn.Module):
         lora: Optional[dict] = None,
     ):
         out = []
-        mask = torch.zeros(1, 1, 2048, device=self.device, dtype=torch.bool)
+        mask = torch.zeros(
+            1, 1, self.config.text.max_context, device=self.device, dtype=torch.bool
+        )
         mask[:, :, :pos] = 1
         pos_ids = torch.tensor([pos], device=self.device, dtype=torch.long)
 

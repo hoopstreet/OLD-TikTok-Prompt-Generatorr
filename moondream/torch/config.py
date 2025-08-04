@@ -8,7 +8,7 @@ class TextConfig:
     ff_dim: int = 8192
     n_layers: int = 24
     vocab_size: int = 51200
-    max_context: int = 2048
+    max_context: int = 4096
     n_heads: int = 32
     n_kv_heads: int = 32
     prefix_attn: int = 730
@@ -37,7 +37,6 @@ class RegionConfig:
     coord_out_dim: int = 1024
     size_feat_dim: int = 512
     size_out_dim: int = 2048
-    inner_dim: int = 8192
     group_size: Optional[int] = None
 
 

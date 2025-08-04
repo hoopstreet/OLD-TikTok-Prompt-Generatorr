@@ -54,20 +54,12 @@ def _load_weights(get_tensor: Callable[[str], torch.Tensor], model: nn.Module) -
         "text_model.lm_head.linear.bias": model.text["lm_head"].bias,
         "region_model.coordinate_encoder.weight": region["coord_encoder"].weight,
         "region_model.coordinate_encoder.bias": region["coord_encoder"].bias,
-        "region_model.coordinate_decoder.fc1.weight": region["coord_decoder"][
-            "fc1"
-        ].weight,
-        "region_model.coordinate_decoder.fc1.bias": region["coord_decoder"]["fc1"].bias,
-        "region_model.coordinate_decoder.fc2.weight": region["coord_decoder"][
-            "fc2"
-        ].weight,
-        "region_model.coordinate_decoder.fc2.bias": region["coord_decoder"]["fc2"].bias,
+        "region_model.coordinate_head.weight": region["coord_decoder"].weight,
+        "region_model.coordinate_head.bias": region["coord_decoder"].bias,
         "region_model.size_encoder.weight": region["size_encoder"].weight,
         "region_model.size_encoder.bias": region["size_encoder"].bias,
-        "region_model.size_decoder.fc1.weight": region["size_decoder"]["fc1"].weight,
-        "region_model.size_decoder.fc1.bias": region["size_decoder"]["fc1"].bias,
-        "region_model.size_decoder.fc2.weight": region["size_decoder"]["fc2"].weight,
-        "region_model.size_decoder.fc2.bias": region["size_decoder"]["fc2"].bias,
+        "region_model.size_head.weight": region["size_decoder"].weight,
+        "region_model.size_head.bias": region["size_decoder"].bias,
     }
 
     for i in range(len(model.vision["blocks"])):

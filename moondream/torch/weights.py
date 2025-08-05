@@ -85,6 +85,7 @@ def _load_weights(get_tensor: Callable[[str], torch.Tensor], model: nn.Module) -
     for i in range(len(model.text["blocks"])):
         prefix = f"text_model.transformer.h.{i}"
         blk = model.text["blocks"][i]
+        is_moe = hasattr(blk.mlp, "router")
         weight_map.update(
             {
                 f"{prefix}.ln.weight": blk["ln"].weight,
@@ -93,12 +94,26 @@ def _load_weights(get_tensor: Callable[[str], torch.Tensor], model: nn.Module) -
                 f"{prefix}.mixer.Wqkv.bias": blk["attn"]["qkv"].bias,
                 f"{prefix}.mixer.out_proj.weight": blk["attn"]["proj"].weight,
                 f"{prefix}.mixer.out_proj.bias": blk["attn"]["proj"].bias,
-                f"{prefix}.mlp.fc1.weight": blk["mlp"]["fc1"].weight,
-                f"{prefix}.mlp.fc1.bias": blk["mlp"]["fc1"].bias,
-                f"{prefix}.mlp.fc2.weight": blk["mlp"]["fc2"].weight,
-                f"{prefix}.mlp.fc2.bias": blk["mlp"]["fc2"].bias,
             }
         )
+        if is_moe:
+            weight_map.update(
+                {
+                    f"{prefix}.gate.weight": blk["mlp"]["router"].weight,
+                    f"{prefix}.gate.bias": blk["mlp"]["router"].bias,
+                    f"{prefix}.mlp.experts.weight": blk["mlp"]["fc1"].weight,
+                    f"{prefix}.mlp.output_experts.weight": blk["mlp"]["fc2"].weight,
+                }
+            )
+        else:
+            weight_map.update(
+                {
+                    f"{prefix}.mlp.fc1.weight": blk["mlp"]["fc1"].weight,
+                    f"{prefix}.mlp.fc1.bias": blk["mlp"]["fc1"].bias,
+                    f"{prefix}.mlp.fc2.weight": blk["mlp"]["fc2"].weight,
+                    f"{prefix}.mlp.fc2.bias": blk["mlp"]["fc2"].bias,
+                }
+            )
 
     for key, tensor in weight_map.items():
         tensor.data.copy_(get_tensor(key))

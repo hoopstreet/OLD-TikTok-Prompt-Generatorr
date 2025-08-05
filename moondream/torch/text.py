@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from typing import Optional
 
-from .layers import layer_norm, mlp, QuantizedLinear
+from .layers import layer_norm, mlp, QuantizedLinear, moe_mlp
 from .rope import apply_rotary_emb, precompute_freqs_cis
 from .config import TextConfig
 
@@ -154,7 +154,12 @@ def text_decoder(
             position_ids=position_ids,
             lora=attn_lora,
         )
-        l_mlp = mlp(l_in, block.mlp, lora=mlp_lora)
+
+        if config.moe is not None and i >= config.moe.start_layer:
+            l_mlp = moe_mlp(l_in, block.mlp, config.moe.experts_per_token)
+        else:
+            l_mlp = mlp(l_in, block.mlp, lora=mlp_lora)
+
         x = x + l_attn + l_mlp
 
     return x
@@ -171,6 +176,37 @@ def _lm_head(hidden_BTC: torch.Tensor, w: nn.Module):
     hidden_BTC = layer_norm(hidden_BTC, w.post_ln)
     logits = w.lm_head(hidden_BTC)
     return logits
+
+
+def build_dense_mlp(d_model, d_ffn, dtype, linear_cls):
+    return nn.ModuleDict(
+        {
+            "fc1": linear_cls(d_model, d_ffn, dtype=dtype),
+            "fc2": linear_cls(d_ffn, d_model, dtype=dtype),
+        }
+    )
+
+
+def build_moe_mlp(d_model, d_ffn, n_experts, dtype):
+    return nn.ModuleDict(
+        {
+            "router": nn.Linear(d_model, n_experts, dtype=dtype),
+            "fc1": nn.ParameterDict(
+                {
+                    "weight": nn.Parameter(
+                        torch.empty(n_experts, d_ffn, d_model, dtype=dtype)
+                    )
+                }
+            ),
+            "fc2": nn.ParameterDict(
+                {
+                    "weight": nn.Parameter(
+                        torch.empty(n_experts, d_model, d_ffn, dtype=dtype)
+                    )
+                }
+            ),
+        }
+    )
 
 
 def build_text_model(config: TextConfig, dtype: torch.dtype) -> nn.Module:
@@ -192,19 +228,22 @@ def build_text_model(config: TextConfig, dtype: torch.dtype) -> nn.Module:
                                     ),
                                 }
                             ),
-                            "mlp": nn.ModuleDict(
-                                {
-                                    "fc1": linear_cls(
-                                        config.dim, config.ff_dim, dtype=dtype
-                                    ),
-                                    "fc2": linear_cls(
-                                        config.ff_dim, config.dim, dtype=dtype
-                                    ),
-                                }
+                            "mlp": (
+                                build_moe_mlp(
+                                    config.dim,
+                                    config.moe.expert_inner_dim,
+                                    config.moe.num_experts,
+                                    dtype,
+                                )
+                                if config.moe is not None
+                                and layer_idx >= config.moe.start_layer
+                                else build_dense_mlp(
+                                    config.dim, config.ff_dim, dtype, linear_cls
+                                )
                             ),
                         }
                     )
-                    for _ in range(config.n_layers)
+                    for layer_idx in range(config.n_layers)
                 ]
             ),
             "post_ln": nn.LayerNorm(config.dim, dtype=dtype),

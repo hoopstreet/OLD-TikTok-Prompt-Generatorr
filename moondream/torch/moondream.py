@@ -235,7 +235,9 @@ class MoondreamModel(nn.Module):
             )
             inputs_embeds = torch.cat([bos_emb, img_emb[None]], dim=1)
             mask = self.attn_mask[:, :, 0 : inputs_embeds.size(1), :]
-            pos_ids = torch.arange(inputs_embeds.size(1), dtype=torch.long)
+            pos_ids = torch.arange(
+                inputs_embeds.size(1), dtype=torch.long, device=self.device
+            )
             self._prefill(inputs_embeds, mask, pos_ids, lora)
 
         return EncodedImage(
@@ -288,7 +290,9 @@ class MoondreamModel(nn.Module):
                 attn_mask = self.attn_mask
 
             mask = attn_mask[:, :, pos : pos + prompt_emb.size(1), :]
-            pos_ids = torch.arange(pos, pos + prompt_emb.size(1), dtype=torch.long)
+            pos_ids = torch.arange(
+                pos, pos + prompt_emb.size(1), dtype=torch.long, device=self.device
+            )
             hidden_BC = self._prefill(prompt_emb, mask, pos_ids, lora)
             logits_BV = lm_head(hidden_BC, self.text)
 
@@ -850,7 +854,10 @@ class MoondreamModel(nn.Module):
 
             mask = self.attn_mask[:, :, image.pos : image.pos + prompt_emb.size(1), :]
             pos_ids = torch.arange(
-                image.pos, image.pos + prompt_emb.size(1), dtype=torch.long
+                image.pos,
+                image.pos + prompt_emb.size(1),
+                dtype=torch.long,
+                device=self.device,
             )
             hidden = self._prefill(prompt_emb, mask, pos_ids, lora=None)
             logits = lm_head(hidden, self.text)

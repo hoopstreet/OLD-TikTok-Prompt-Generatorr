@@ -173,9 +173,12 @@ def moe_mlp(
         # Expand input for all token-expert pairs
         x_expanded = x.unsqueeze(1).expand(-1, top_k, -1).reshape(-1, C)  # [T*A, D]
 
-        # First linear layer: [T*A, H, D] @ [T*A, D, 1] -> [T*A, H]
-        x1 = torch.bmm(w1_selected, x_expanded.unsqueeze(-1)).squeeze(-1)  # [T*A, H]
-        x1 = F.gelu(x1)
+        # First linear layer with GeGLU: [T*A, H, D] @ [T*A, D, 1] -> [T*A, H]
+        x1_full = torch.bmm(w1_selected, x_expanded.unsqueeze(-1)).squeeze(
+            -1
+        )  # [T*A, H]
+        x1, g = x1_full.chunk(2, dim=-1)
+        x1 = F.gelu(x1) * (g + 1)
 
         # Second linear layer: [T*A, D, H] @ [T*A, H, 1] -> [T*A, D]
         expert_outs = torch.bmm(w2_selected, x1.unsqueeze(-1)).squeeze(-1)  # [T*A, D]
@@ -200,8 +203,9 @@ def moe_mlp(
             x_tok = x.index_select(0, token_pos)
             gate_tok = topk_weights[token_pos, which_k]
 
-            h = F.linear(x_tok, mlp_module.fc1.weight[expert_id])
-            h = F.gelu(h)
+            h_full = F.linear(x_tok, mlp_module.fc1.weight[expert_id])
+            h, g = h_full.chunk(2, dim=-1)
+            h = F.gelu(h) * (g + 1)
             y = F.linear(h, mlp_module.fc2.weight[expert_id])
 
             y.mul_(gate_tok.unsqueeze(-1))

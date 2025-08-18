@@ -94,6 +94,9 @@ def _load_weights(get_tensor: Callable[[str], torch.Tensor], model: nn.Module) -
                 f"{prefix}.mixer.Wqkv.bias": blk["attn"]["qkv"].bias,
                 f"{prefix}.mixer.out_proj.weight": blk["attn"]["proj"].weight,
                 f"{prefix}.mixer.out_proj.bias": blk["attn"]["proj"].bias,
+                f"{prefix}.tau_wq": blk["attn"]["tau"]["wq"],
+                f"{prefix}.tau_wv": blk["attn"]["tau"]["wv"],
+                f"{prefix}.tau_alpha": blk["attn"]["tau"]["alpha"],
             }
         )
         if is_moe:

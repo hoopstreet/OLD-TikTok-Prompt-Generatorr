@@ -33,11 +33,23 @@ def attn(
     q_dim = n_heads * head_dim
     kv_dim = n_kv_heads * head_dim
     q, k, v = qkv_out.split([q_dim, kv_dim, kv_dim], dim=-1)
-    del qkv_out
 
     q = q.view(bsz, q_len, n_heads, head_dim).transpose(1, 2)
     k = k.view(bsz, q_len, n_kv_heads, head_dim).transpose(1, 2)
     v = v.view(bsz, q_len, n_kv_heads, head_dim).transpose(1, 2)
+
+    if hasattr(w, "tau") and w.tau is not None:
+        tok_feat = F.gelu(qkv_out)
+        tok_q = torch.tanh(torch.matmul(tok_feat, w.tau["wq"].t())).permute(0, 2, 1)
+        tok_v = torch.tanh(torch.matmul(tok_feat, w.tau["wv"].t())).permute(0, 2, 1)
+        pos = position_ids.to(q.dtype) + 1
+        tau_pos = 1 + (
+            torch.sigmoid(w.tau["alpha"][:, None] * pos.log()) - 0.5
+        )  # (H,S)
+        tau_q = (tok_q + tau_pos[None]).unsqueeze(-1)  # (B,H,S,1)
+        tau_v = (tok_v + tau_pos[None]).unsqueeze(-1)
+        q = q * tau_q
+        v = v * tau_v
 
     q = apply_rotary_emb(q, freqs_cis, position_ids, n_heads)
     k = apply_rotary_emb(k, freqs_cis, position_ids, n_kv_heads)
@@ -58,71 +70,6 @@ def attn(
         out = out0
 
     return out
-
-
-def _attn(
-    x: torch.Tensor,
-    w: torch.Tensor,
-    freqs_cis: torch.Tensor,
-    attn_mask: torch.Tensor,
-    n_heads: int,
-    n_kv_heads: int,
-):
-    bsz, q_len, d_model = x.shape
-    head_dim = d_model // n_heads
-    pos = 0
-
-    qkv_out = w.qkv(x)  # shape: (bsz, q_len, (n_heads + 2*n_kv_heads)*head_dim)
-    q_dim = n_heads * head_dim
-    kv_dim = n_kv_heads * head_dim
-
-    q = qkv_out[..., :q_dim].view(bsz, q_len, n_heads, head_dim).transpose(1, 2)
-    k = (
-        qkv_out[..., q_dim : q_dim + kv_dim]
-        .view(bsz, q_len, n_kv_heads, head_dim)
-        .transpose(1, 2)
-    )
-    v = (
-        qkv_out[..., q_dim + kv_dim :]
-        .view(bsz, q_len, n_kv_heads, head_dim)
-        .transpose(1, 2)
-    )
-
-    position_ids = torch.arange(pos, pos + q_len, dtype=torch.long)
-    q = apply_rotary_emb(q, freqs_cis, position_ids, n_heads)
-    k = apply_rotary_emb(k, freqs_cis, position_ids, n_kv_heads)
-    out = F.scaled_dot_product_attention(
-        q, k, v, attn_mask=attn_mask, enable_gqa=n_heads != n_kv_heads
-    )
-    out = out.transpose(1, 2).reshape(bsz, q_len, d_model)
-    out = w.proj(out)
-    return out
-
-
-def _produce_hidden(inputs_embeds: torch.Tensor, w: nn.Module, config: TextConfig):
-    hidden_BTC = inputs_embeds
-
-    bsz, q_len, d_model = inputs_embeds.shape
-    attn_mask = torch.zeros(q_len, q_len)
-    attn_mask[:730, :730] = 1
-    for i in range(730, q_len):
-        attn_mask[i, : i + 1] = 1
-    attn_mask = attn_mask.to(dtype=torch.bool)
-
-    for i, block in enumerate(w.blocks):
-        l_in = layer_norm(hidden_BTC, block.ln)
-        l_attn = _attn(
-            x=l_in,
-            w=block.attn,
-            freqs_cis=w.freqs_cis,
-            attn_mask=attn_mask,
-            n_heads=config.n_heads,
-            n_kv_heads=config.n_kv_heads,
-        )
-        l_mlp = mlp(l_in, block.mlp)
-        hidden_BTC = hidden_BTC + l_attn + l_mlp
-
-    return hidden_BTC
 
 
 def text_decoder(
@@ -172,12 +119,6 @@ def lm_head(hidden_BTC: torch.Tensor, w: nn.Module):
     return logits
 
 
-def _lm_head(hidden_BTC: torch.Tensor, w: nn.Module):
-    hidden_BTC = layer_norm(hidden_BTC, w.post_ln)
-    logits = w.lm_head(hidden_BTC)
-    return logits
-
-
 def build_dense_mlp(d_model, d_ffn, dtype, linear_cls):
     return nn.ModuleDict(
         {
@@ -188,13 +129,14 @@ def build_dense_mlp(d_model, d_ffn, dtype, linear_cls):
 
 
 def build_moe_mlp(d_model, d_ffn, n_experts, dtype):
+    # For GeGLU, fc1 needs to output 2 * d_ffn (for gating)
     return nn.ModuleDict(
         {
             "router": nn.Linear(d_model, n_experts, dtype=dtype),
             "fc1": nn.ParameterDict(
                 {
                     "weight": nn.Parameter(
-                        torch.empty(n_experts, d_ffn, d_model, dtype=dtype)
+                        torch.empty(n_experts, 2 * d_ffn, d_model, dtype=dtype)
                     )
                 }
             ),
@@ -225,6 +167,23 @@ def build_text_model(config: TextConfig, dtype: torch.dtype) -> nn.Module:
                                     "qkv": linear_cls(config.dim, qkv_dim, dtype=dtype),
                                     "proj": linear_cls(
                                         config.dim, config.dim, dtype=dtype
+                                    ),
+                                    "tau": nn.ParameterDict(
+                                        {
+                                            "wq": nn.Parameter(
+                                                torch.empty(
+                                                    config.n_heads, qkv_dim, dtype=dtype
+                                                )
+                                            ),
+                                            "wv": nn.Parameter(
+                                                torch.empty(
+                                                    config.n_heads, qkv_dim, dtype=dtype
+                                                )
+                                            ),
+                                            "alpha": nn.Parameter(
+                                                torch.empty(config.n_heads, dtype=dtype)
+                                            ),
+                                        }
                                     ),
                                 }
                             ),

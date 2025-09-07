@@ -8,3 +8,7 @@ dist
 clients/python/moondream/torch
 wandb/
 moondream_finetune.safetensors
+.vscode/
+models/
+water-meter-jbktv-7vz5k-fsod-ftoz-1/
+uv.lock

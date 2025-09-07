@@ -19,13 +19,21 @@ from ..torch.region import (
     encode_size,
 )
 
+from .Roboflow import download_dataset, RoboflowDataset, get_loaders
+from .mAP import per_object_mAP
 
 # This is a intended to be a basic starting point. Your optimal hyperparams and data may be different.
-MODEL_PATH = ""
+MODEL_PATH = "/home/manugaur/moondream/models/model.safetensors"
+BATCH_SIZE = 1
+NUM_WORKERS=0
 LR = 1e-5
-EPOCHS = 1
-GRAD_ACCUM_STEPS = 128
-
+EPOCHS = 200
+GRAD_ACCUM_STEPS = 10
+GRAD_CLIP = 1000
+STEP = 0
+SAVE_METRIC = 0 #temp
+CKPT_NAME = "yolo_run"
+WANDB = True
 
 def lr_schedule(step, max_steps):
     x = step / max_steps
@@ -102,24 +110,101 @@ class WasteDetection(Dataset):
         }
 
 
+import collections
+def get_metric_summary(dataset_metric, name):
+    global STEP
+    class_stats = collections.defaultdict(lambda: {'sum': 0.0, 'count': 0})
+    total_precision_sum = 0.0
+    total_scores_count = 0
+
+    for image_precisions in dataset_metric :
+        for class_id, precision in image_precisions.items():
+            class_stats[class_id]['sum'] += precision
+            class_stats[class_id]['count'] += 1
+            total_precision_sum += precision
+            total_scores_count += 1
+
+    avg_dataset_precision = total_precision_sum / total_scores_count if total_scores_count > 0 else 0
+    # print(f"AVG {name}: {avg_dataset_precision:.4f}")
+    avg_class_precision = {}
+    for class_id in sorted(class_stats.keys()):
+        stats = class_stats[class_id]
+        average = stats['sum'] / stats['count'] if stats['count'] > 0 else 0
+        avg_class_precision[f"{name}/{class_id}"] = average
+        # print(f"{class_id}: {average:.4f} ({stats['count']} counts)")
+    # print("\n")
+    avg_class_precision[f"{name}/AVG"] = avg_dataset_precision
+    if wandb.run:
+        wandb.log(avg_class_precision, step=STEP)
+    return avg_dataset_precision
+    
+@torch.no_grad()
+def eval_obj_det(model, loader):
+    global STEP
+    global SAVE_METRIC
+    model.eval()
+    AP = [] #image_idx --> AP
+    AP_50 = []
+    AR_100 = []
+    
+    for batch_idx, sample in enumerate(loader):
+        AP_dict = {}
+        AP_50_dict= {}
+        AR_100_dict= {}
+        for class_name, boxes_list in sample['class_to_bbox'].items():
+            instruction = f"\n\nDetect: {class_name}\n\n"
+            out = model.detect(sample['image'], instruction)['objects']
+            ######## TO DO --> plot 5-10 outputs
+            metadata = {
+                "size" : sample['size'],
+                "prompt": instruction,
+                'filename': sample['filename'],
+            }
+            metrics = per_object_mAP([_.tolist() for _ in boxes_list], [list(_.values()) for _ in out], metadata)
+            AP_50_dict.update({class_name:float(metrics['AP_50'])})
+            AR_100_dict.update({class_name:float(metrics['AR_100'])})
+            AP_dict.update({class_name:float(metrics['AP'])})
+        
+        AP.append(AP_dict)
+        AP_50.append(AP_50_dict)
+        AR_100.append(AR_100_dict)
+
+    _ = get_metric_summary(AP, 'AP (0.50:0.95)')
+    avg_AP_50 = get_metric_summary(AP_50, 'AP (0.50)')
+    avg_AR_100 = get_metric_summary(AR_100, 'AR (0.50:0.95) | 100 Det')
+    
+    if avg_AP_50 > SAVE_METRIC:
+        SAVE_METRIC = avg_AP_50
+        save_file(
+        model.state_dict(),
+        f"checkpoints/{CKPT_NAME}.safetensors",
+        )
+
+    model.train()
+
 def main():
+    global STEP
     if torch.cuda.is_available():
         torch.set_default_device("cuda")
     elif torch.backends.mps.is_available():
         torch.set_default_device("mps")
-
-    wandb.init(
-        project="moondream-ft",
-        config={
-            "EPOCHS": EPOCHS,
-            "GRAD_ACCUM_STEPS": GRAD_ACCUM_STEPS,
-            "LR": LR,
-        },
-    )
+    if WANDB:
+        wandb.init(
+            project="moondream-ft",
+            config={
+                "EPOCHS": EPOCHS,
+                "GRAD_ACCUM_STEPS": GRAD_ACCUM_STEPS,
+                "LR": LR,
+            },
+        )
 
     config = MoondreamConfig()
     model = MoondreamModel(config)
     load_weights_into_model(MODEL_PATH, model)
+    
+    for name, p in model.named_parameters():
+        if 'region' not in name:
+            p.requires_grad = False
 
     # If you are struggling with GPU memory, try AdamW8Bit
     optimizer = AdamW(
@@ -129,16 +214,27 @@ def main():
         eps=1e-6,
     )
 
-    dataset = WasteDetection()
-
-    total_steps = EPOCHS * len(dataset) // GRAD_ACCUM_STEPS
+    # dataset = WasteDetection()
+    
+    ds = download_dataset("4BDHggHM6vkVOoK3g0s3", "objectdetvlm", "water-meter-jbktv-7vz5k-fsod-ftoz-qii9s", 1)
+    datasets = {
+        "train": RoboflowDataset(ds.location,"train"),
+        "val": RoboflowDataset(ds.location,"valid"),
+        "test": RoboflowDataset(ds.location,"test"),
+    }
+    loaders = get_loaders(datasets, BATCH_SIZE, NUM_WORKERS)    
+    # init evals
+    eval_obj_det(model, loaders['val'])
+    
+    total_loss = 0.0
+    total_steps = EPOCHS * len(loaders['train']) // GRAD_ACCUM_STEPS
     pbar = tqdm(total=total_steps)
-
-    i = 0
+    i=0
+    #### Training
     for epoch in range(EPOCHS):
-        for sample in dataset:
-            i += 1
-
+        for batch_idx, sample in enumerate(loaders['train']):
+            i+=1
+            STEP+=1
             with torch.no_grad():
                 img_emb = model._run_vision_encoder(sample["image"])
                 bos_emb = text_encoder(
@@ -153,13 +249,15 @@ def main():
                     ),
                     model.text,
                 )
-
-            boxes_by_class = {}
-            for box, cls in zip(sample["boxes"], sample["class_names"]):
-                boxes_by_class.setdefault(cls, []).append(box)
-
-            total_loss = 0.0
+            
+            # boxes_by_class = {}
+            # for box, cls in zip(sample["boxes"], sample["class_names"]):
+            #     boxes_by_class.setdefault(cls, []).append(box)
+            
+            image_loss = 0.0
+            boxes_by_class = sample['class_to_bbox']
             for class_name, boxes_list in boxes_by_class.items():
+            # for class_name, boxes_list in sample['class_to_bbox'].items():
                 with torch.no_grad():
                     instruction = f"\n\nDetect: {class_name}\n\n"
                     instruction_tokens = model.tokenizer.encode(instruction).ids
@@ -176,9 +274,9 @@ def main():
                     l_cs = len(cs_emb)
                     cs_emb.extend(
                         [
-                            encode_coordinate(bb[0].unsqueeze(0), model.region),
-                            encode_coordinate(bb[1].unsqueeze(0), model.region),
-                            encode_size(bb[2:4], model.region),
+                        encode_coordinate(bb[0].to(model.region.coord_features.dtype).unsqueeze(0), model.region),
+                        encode_coordinate(bb[1].to(model.region.coord_features.dtype).unsqueeze(0), model.region),
+                        encode_size(bb[2:4].to(model.region.coord_features.dtype).unsqueeze(0), model.region).squeeze(0),
                         ]
                     )
                     c_idx.extend([l_cs, l_cs + 1])
@@ -226,13 +324,16 @@ def main():
                     c_idx=c_idx,
                     s_idx=s_idx,
                 )
-                total_loss += loss
-
-            total_loss.backward()
-
-            if i % GRAD_ACCUM_STEPS == 0:
+                image_loss += loss
+            
+            total_loss += image_loss
+            if (i+1) % GRAD_ACCUM_STEPS == 0:
+                total_loss /= GRAD_ACCUM_STEPS
+                total_loss.backward()    
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.region.parameters(), max_norm = GRAD_CLIP)
                 optimizer.step()
                 optimizer.zero_grad()
+
 
                 lr_val = lr_schedule(i / GRAD_ACCUM_STEPS, total_steps)
                 for param_group in optimizer.param_groups:
@@ -241,24 +342,24 @@ def main():
                     {"step": i // GRAD_ACCUM_STEPS, "loss": total_loss.item()}
                 )
                 pbar.update(1)
-                wandb.log(
-                    {
-                        "loss/train": total_loss.item(),
-                        "lr": optimizer.param_groups[0]["lr"],
-                    }
-                )
+                if wandb.run:
+                    wandb.log(
+                        {
+                            "loss/train": total_loss.item(),
+                            "trainer/lr": optimizer.param_groups[0]["lr"],
+                            'trainer/grad_norm': grad_norm,
+                        }, step=STEP
+                    )
+                total_loss = 0.0
+    
+        if (epoch+1) % 10 == 0:
+            eval_obj_det(model, datasets['val'])
+    
     wandb.finish()
-
-    # Replace with your desired output location.
-    save_file(
-        model.state_dict(),
-        "moondream_finetune.safetensors",
-    )
-
 
 if __name__ == "__main__":
     """
-    Replace paths with your appropriate paths.
-    To run: python -m moondream.finetune.finetune_region
+    To do:
+    config/parser - ckpt_name
     """
     main()

@@ -35,7 +35,8 @@ if __name__ == "__main__":
         config = MoondreamConfig()
     model = MoondreamModel(config)
     load_weights_into_model(args.model, model)
-    model.to(device)
+    model.to(device, dtype=torch.bfloat16)
+    model.compile()
 
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
@@ -49,6 +50,16 @@ if __name__ == "__main__":
 
     if not args.benchmark:
         encoded_image = model.encode_image(image)
+
+        # Text query
+        text_query = "What is the capital of Washington, USA? Answer in JSON format."
+        print("Query:", text_query)
+        text_response = model.query(None, text_query, reasoning=True, stream=True)
+        print("Reasoning:", text_response["reasoning"])
+        for t in text_response["answer"]:
+            print(t, end="", flush=True)
+        print()
+        print()
 
         # Short caption
         print("Caption: short")
@@ -64,14 +75,16 @@ if __name__ == "__main__":
         print()
         print()
 
+        # Long caption
+        print("Caption: long")
+        for t in model.caption(encoded_image, "long", stream=True)["caption"]:
+            print(t, end="", flush=True)
+        print()
+        print()
+
         # Query
         print("Query:", args.prompt)
-        for t in model.query(
-            encoded_image,
-            args.prompt,
-            stream=True,
-            settings={"variant": "geoguesser_lora_only"},
-        )["answer"]:
+        for t in model.query(encoded_image, args.prompt, stream=True)["answer"]:
             print(t, end="", flush=True)
         print()
         print()
@@ -104,21 +117,22 @@ if __name__ == "__main__":
         image.save("detect.jpg")
 
         # Spatial query
-        print("Spatial query: What is this?")
-        for t in model.query(
-            encoded_image,
-            "What is this?",
-            spatial_refs=[
-                [
-                    (obj["x_min"], obj["y_min"], obj["x_max"], obj["y_max"])
-                    for obj in objs
-                ][0]
-            ],
-            stream=True,
-        )["answer"]:
-            print(t, end="", flush=True)
-        print()
-        print()
+        if len(objs) > 0:
+            print("Spatial query: What is this?")
+            for t in model.query(
+                encoded_image,
+                "What is this?",
+                spatial_refs=[
+                    [
+                        (obj["x_min"], obj["y_min"], obj["x_max"], obj["y_max"])
+                        for obj in objs
+                    ][0]
+                ],
+                stream=True,
+            )["answer"]:
+                print(t, end="", flush=True)
+            print()
+            print()
 
         # Point
         obj = "ear"
@@ -134,32 +148,35 @@ if __name__ == "__main__":
         print()
 
         # Spatial query
-        for o in ["hand", "ear", "face"]:
-            for k in [(objs, "hand"), (points, "ear")]:
-                print(f"Spatial query: Is this a {o}? ({k[1]})")
-                for t in model.query(
-                    encoded_image,
-                    f"Is this a {o}?",
-                    spatial_refs=[
-                        [
-                            (
-                                (obj["x_min"], obj["y_min"], obj["x_max"], obj["y_max"])
-                                if "x_min" in obj
-                                else (obj["x"], obj["y"])
-                            )
-                            for obj in k[0]
-                        ][0]
-                    ],
-                )["answer"]:
-                    print(t, end="", flush=True)
-                print()
+        if len(objs) > 0:
+            for o in ["hand", "ear", "face"]:
+                for k in [(objs, "hand"), (points, "ear")]:
+                    print(f"Spatial query: Is this a {o}? ({k[1]})")
+                    for t in model.query(
+                        encoded_image,
+                        f"Is this a {o}?",
+                        spatial_refs=[
+                            [
+                                (
+                                    (
+                                        obj["x_min"],
+                                        obj["y_min"],
+                                        obj["x_max"],
+                                        obj["y_max"],
+                                    )
+                                    if "x_min" in obj
+                                    else (obj["x"], obj["y"])
+                                )
+                                for obj in k[0]
+                            ][0]
+                        ],
+                    )["answer"]:
+                        print(t, end="", flush=True)
+                    print()
 
         # Detect gaze
         model.detect_gaze(encoded_image, (0.5, 0.5))
     elif model.device.type != "mps":
-        torch._dynamo.reset()
-        model.compile()
-
         # Warmup runs
         for _ in tqdm(range(5), desc="Warmup"):
             encoded_image = model.encode_image(image)

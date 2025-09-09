@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from torch.nn import functional as F
+from torch.nn.attention.flex_attention import flex_attention
 from typing import Optional
 
 from .layers import layer_norm, mlp, QuantizedLinear, moe_mlp
@@ -22,7 +23,8 @@ def attn(
     n_heads: int,
     n_kv_heads: int,
     position_ids: torch.Tensor,
-    lora: Optional[dict],
+    lora: Optional[dict] = None,
+    flex_block_mask_slice=None,
 ):
     bsz, q_len, d_model = x.shape
     head_dim = d_model // n_heads
@@ -57,9 +59,14 @@ def attn(
     if kv_cache is not None:
         k, v = kv_cache.update(position_ids, k, v)
 
-    out = F.scaled_dot_product_attention(
-        q, k, v, attn_mask=attn_mask, enable_gqa=n_heads != n_kv_heads
-    )
+    if flex_block_mask_slice is not None:
+        torch._assert(n_heads == n_kv_heads, "gqa not supported yet")
+        out = flex_attention(q, k, v, block_mask=flex_block_mask_slice)
+    else:
+        out = F.scaled_dot_product_attention(
+            q, k, v, attn_mask=attn_mask, enable_gqa=n_heads != n_kv_heads
+        )
+
     out = out.transpose(1, 2).reshape(bsz, q_len, d_model)
 
     out0 = w.proj(out)
@@ -78,7 +85,8 @@ def text_decoder(
     attn_mask: torch.Tensor,
     position_ids: torch.Tensor,
     config: TextConfig,
-    lora: Optional[dict],
+    lora: Optional[dict] = None,
+    flex_block_mask_slice=None,
 ):
     for i, block in enumerate(w.blocks):
         if lora is not None:
@@ -100,6 +108,7 @@ def text_decoder(
             n_kv_heads=config.n_kv_heads,
             position_ids=position_ids,
             lora=attn_lora,
+            flex_block_mask_slice=flex_block_mask_slice,
         )
 
         if config.moe is not None and i >= config.moe.start_layer:

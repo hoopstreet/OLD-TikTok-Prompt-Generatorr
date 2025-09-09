@@ -6,6 +6,7 @@ from typing import Literal, Tuple, TypedDict, Union, Dict, Any, Optional, List
 from PIL import Image
 from dataclasses import dataclass
 from tokenizers import Tokenizer
+from torch.nn.attention.flex_attention import create_block_mask
 
 from .config import MoondreamConfig
 from .image_crops import reconstruct_from_crops
@@ -78,6 +79,17 @@ class KVCache(nn.Module):
         return kout, vout
 
 
+def causal_mask(b, h, q_idx, kv_idx):
+    return q_idx >= kv_idx
+
+
+def get_mask_mod(mask_mod, offset):
+    def _mask_mod(b, h, q, kv):
+        return mask_mod(b, h, q + offset, kv)
+
+    return _mask_mod
+
+
 class MoondreamModel(nn.Module):
 
     def __init__(
@@ -127,6 +139,15 @@ class MoondreamModel(nn.Module):
         attn_mask[..., :prefix_attn_len, :prefix_attn_len] = 1
         self.register_buffer("attn_mask", attn_mask, persistent=False)
 
+        self.use_flex_decoding = True
+        self.causal_block_mask = create_block_mask(
+            causal_mask,
+            B=None,
+            H=None,
+            Q_LEN=config.text.max_context,
+            KV_LEN=config.text.max_context,
+        )
+
         # Initialize KV caches.
         if setup_caches:
             self._setup_caches()
@@ -169,7 +190,24 @@ class MoondreamModel(nn.Module):
         pos_ids: torch.Tensor,
         lora: Optional[torch.Tensor],
     ):
-        hidden = text_decoder(x, self.text, attn_mask, pos_ids, self.config.text, lora)
+        if self.use_flex_decoding:
+            torch._assert(pos_ids.shape[-1] == 1, "Invalid position ID shape")
+            block_index = pos_ids // self.causal_block_mask.BLOCK_SIZE[0]
+            mask = self.causal_block_mask[:, :, block_index]
+            mask.seq_lengths = (1, mask.seq_lengths[1])
+            mask.mask_mod = get_mask_mod(self.causal_block_mask.mask_mod, pos_ids[0])
+        else:
+            mask = None
+
+        hidden = text_decoder(
+            x,
+            self.text,
+            attn_mask,
+            pos_ids,
+            self.config.text,
+            lora=lora,
+            flex_block_mask_slice=mask,
+        )
         logits = lm_head(hidden, self.text)
         return logits, hidden
 
@@ -178,9 +216,9 @@ class MoondreamModel(nn.Module):
             if isinstance(module, QuantizedLinear):
                 module.unpack()
 
-        # TODO: vision_projection is not being compiled
+        # TODO: vision_projection and _prefill is not being compiled
         self._vis_enc = torch.compile(self._vis_enc, fullgraph=True)
-        self._prefill = torch.compile(self._prefill, fullgraph=True)
+        # self._prefill = torch.compile(self._prefill, fullgraph=True)
         self._decode_one_tok = torch.compile(
             self._decode_one_tok, fullgraph=True, mode="reduce-overhead"
         )

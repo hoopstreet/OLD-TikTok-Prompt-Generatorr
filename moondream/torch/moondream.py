@@ -544,6 +544,10 @@ class MoondreamModel(nn.Module):
                     logits_BV, _ = self._decode_one_tok(next_emb, mask, pos_ids, lora)
                     logits_BV[:, self.config.tokenizer.answer_id] = float("-inf")
 
+                    # Suppress EOS for the first token to ensure at least one answer token
+                    if generated_tokens == 0:
+                        logits_BV[:, eos_id] = float("-inf")
+
                     pos += 1
 
                     if temperature == 0:

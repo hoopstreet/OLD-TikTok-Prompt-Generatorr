@@ -121,10 +121,16 @@ def text_decoder(
     return x
 
 
-def lm_head(hidden_BTC: torch.Tensor, w: nn.Module):
+def lm_head(
+    hidden_BTC: torch.Tensor, w: nn.Module, indices: Optional[torch.Tensor] = None
+):
     hidden_BC = hidden_BTC[:, -1, :]
     hidden_BC = layer_norm(hidden_BC, w.post_ln)
-    logits = w.lm_head(hidden_BC)
+    if indices is not None:
+        # Only compute logits for specified token indices
+        logits = hidden_BC @ w.lm_head.weight[indices].T + w.lm_head.bias[indices]
+    else:
+        logits = w.lm_head(hidden_BC)
     return logits
 
 

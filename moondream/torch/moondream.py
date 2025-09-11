@@ -140,17 +140,34 @@ class MoondreamModel(nn.Module):
         self.register_buffer("attn_mask", attn_mask, persistent=False)
 
         self.use_flex_decoding = True
-        self.causal_block_mask = create_block_mask(
-            causal_mask,
-            B=None,
-            H=None,
-            Q_LEN=config.text.max_context,
-            KV_LEN=config.text.max_context,
-        )
+        self._causal_block_mask = None
+        self._point_gen_indices = None
 
         # Initialize KV caches.
         if setup_caches:
             self._setup_caches()
+
+    @property
+    def causal_block_mask(self):
+        # The things we do to deal with ZeroGPU...
+        if self._causal_block_mask is None:
+            self._causal_block_mask = create_block_mask(
+                causal_mask,
+                B=None,
+                H=None,
+                Q_LEN=self.config.text.max_context,
+                KV_LEN=self.config.text.max_context,
+            )
+        return self._causal_block_mask
+
+    @property
+    def point_gen_indices(self):
+        if self._point_gen_indices is None:
+            self._point_gen_indices = torch.tensor(
+                [self.config.tokenizer.coord_id, self.config.tokenizer.eos_id],
+                device=self.device,
+            )
+        return self._point_gen_indices
 
     def _setup_caches(self):
         c = self.config.text
@@ -189,6 +206,7 @@ class MoondreamModel(nn.Module):
         attn_mask: torch.Tensor,
         pos_ids: torch.Tensor,
         lora: Optional[torch.Tensor],
+        lm_head_indices: Optional[torch.Tensor] = None,
     ):
         if self.use_flex_decoding:
             torch._assert(pos_ids.shape[-1] == 1, "Invalid position ID shape")
@@ -208,7 +226,7 @@ class MoondreamModel(nn.Module):
             lora=lora,
             flex_block_mask_slice=mask,
         )
-        logits = lm_head(hidden, self.text)
+        logits = lm_head(hidden, self.text, indices=lm_head_indices)
         return logits, hidden
 
     def compile(self):
@@ -216,12 +234,40 @@ class MoondreamModel(nn.Module):
             if isinstance(module, QuantizedLinear):
                 module.unpack()
 
+        # Initialize lazy properties to avoid first-call overhead
+        self.causal_block_mask
+        self.point_gen_indices
+
         # TODO: vision_projection and _prefill is not being compiled
         self._vis_enc = torch.compile(self._vis_enc, fullgraph=True)
-        # self._prefill = torch.compile(self._prefill, fullgraph=True)
         self._decode_one_tok = torch.compile(
             self._decode_one_tok, fullgraph=True, mode="reduce-overhead"
         )
+
+        # Warm up compiled methods with dummy forward passes
+        device = self.device
+        dtype = self.vision.pos_emb.dtype
+        with torch.no_grad():
+            # Warmup vision encoder
+            dummy_crops = torch.randn(1, 3, 378, 378, device=device, dtype=dtype)
+            self._vis_enc(dummy_crops)
+
+            # Warmup _decode_one_tok (both normal and point generation modes)
+            dummy_emb = torch.randn(
+                1, 1, self.config.text.dim, device=device, dtype=dtype
+            )
+            dummy_mask = torch.ones(
+                1, 1, self.config.text.max_context, device=device, dtype=torch.bool
+            )
+            dummy_pos_ids = torch.tensor([100], device=device, dtype=torch.long)
+            self._decode_one_tok(dummy_emb, dummy_mask, dummy_pos_ids, None)
+            self._decode_one_tok(
+                dummy_emb,
+                dummy_mask,
+                dummy_pos_ids,
+                None,
+                lm_head_indices=self.point_gen_indices,
+            )
 
     def _run_vision_encoder(self, image: Image.Image) -> torch.Tensor:
         all_crops, tiling = prepare_crops(image, self.config.vision, device=self.device)
@@ -760,9 +806,17 @@ class MoondreamModel(nn.Module):
 
                 # Decode next token (x-coordinate, or eos)
                 mask[:, :, pos], pos_ids[0] = 1, pos
-                logits, hidden = self._decode_one_tok(next_emb, mask, pos_ids, lora)
+                logits, hidden = self._decode_one_tok(
+                    next_emb,
+                    mask,
+                    pos_ids,
+                    lora,
+                    lm_head_indices=self.point_gen_indices,
+                )
                 pos += 1
-                next_token = torch.argmax(logits, dim=-1)
+                # Map back: index 0 -> coord_id, index 1 -> eos_id
+                next_token_idx = torch.argmax(logits, dim=-1)
+                next_token = self.point_gen_indices[next_token_idx]
 
         return out
 

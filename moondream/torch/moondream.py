@@ -662,10 +662,7 @@ class MoondreamModel(nn.Module):
                     spatial_toks.extend([coord_id, coord_id, size_id])
 
         prompt_tokens = [
-            prompt_toks
-            + spatial_toks
-            + self.tokenizer.encode(question).ids
-            + self.config.tokenizer.templates["query"]["suffix"]
+            prompt_toks + spatial_toks + self.tokenizer.encode(question).ids
         ]
 
         if reasoning:

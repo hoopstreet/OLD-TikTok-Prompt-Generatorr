@@ -616,7 +616,7 @@ class MoondreamModel(nn.Module):
         self,
         image: Optional[Union[Image.Image, EncodedImage]] = None,
         question: str = None,
-        reasoning: bool = False,
+        reasoning: bool = True,
         spatial_refs: Optional[SpatialRefs] = None,
         stream: bool = False,
         settings: Optional[TextSamplingSettings] = None,

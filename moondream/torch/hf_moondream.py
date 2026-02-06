@@ -29,9 +29,10 @@ class HfConfig(PretrainedConfig):
     _auto_class = "AutoConfig"
     model_type = "moondream3"
 
-    def __init__(self, **kwargs):
+    def __init__(self, use_flex_decoding=True, **kwargs):
         super().__init__(**kwargs)
         self.config = {"skills": ["query", "caption", "detect", "point"]}
+        self.use_flex_decoding = use_flex_decoding
 
 
 class HfMoondream(PreTrainedModel):
@@ -40,8 +41,9 @@ class HfMoondream(PreTrainedModel):
 
     def __init__(self, config):
         super().__init__(config)
+        use_flex_decoding = getattr(config, 'use_flex_decoding', True)
         self.model = MoondreamModel(
-            MoondreamConfig.from_dict(config.config), setup_caches=False
+            MoondreamConfig.from_dict(config.config), setup_caches=False, use_flex_decoding=use_flex_decoding
         )
         self._is_kv_cache_setup = False
 

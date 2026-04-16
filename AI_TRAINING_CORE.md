@@ -97,3 +97,15 @@ The **final_title** must strictly follow these rules:
 - **Structure:** [Hook Emotion] + [Core Product Benefit] + [Urgency/CTA].
 - **SEO Keywords:** Include the niche and primary product feature naturally.
 - **Hashtags:** Exactly 5 relevant hashtags at the very bottom.
+
+## 15. Technical Input Parsing (URL Handling)
+The system is designed to accept and process high-complexity TikTok Shop data:
+- **Image URL Handling:** Must accept ByteDance CDN links (e.g., `*.ibyteimg.com`). The AI must recognize that these links contain dynamic resizing parameters (e.g., `resize-webp`) and security tokens.
+- **Product Link Handling:** Must accept TikTok Shop Product IDs (e.g., `tiktok.com/view/product/...`). 
+- **Data Extraction:** The AI should prioritize the **Product ID** from the link to ensure it stores a unique identifier in the `chat_history` database for memory retrieval.
+
+## 15. Technical Input Parsing (URL Handling)
+The system is designed to accept and process high-complexity TikTok Shop data:
+- **Image URL Handling:** Must accept ByteDance CDN links (e.g., `*.ibyteimg.com`). The AI must recognize that these links contain dynamic resizing parameters (e.g., `resize-webp`) and security tokens.
+- **Product Link Handling:** Must accept TikTok Shop Product IDs (e.g., `tiktok.com/view/product/...`). 
+- **Data Extraction:** The AI should prioritize the **Product ID** from the link to ensure it stores a unique identifier in the `chat_history` database for memory retrieval.

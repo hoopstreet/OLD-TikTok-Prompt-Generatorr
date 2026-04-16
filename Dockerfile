@@ -1,5 +1,5 @@
 # This tells Hugging Face to pull your pre-built image from DockerHub
-FROM hoopstreet/tiktok-prompt-generator:v1.3.5-EXPANSION
+FROM hoopstreet/tiktok-prompt-generator:v1.3.6-EXPANSION
 
 # We use USER root
 # Build Version: 1.7.2 to ensure we can handle any file permissions inside the container

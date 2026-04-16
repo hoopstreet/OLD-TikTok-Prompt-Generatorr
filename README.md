@@ -1,3 +1,16 @@
+---
+title: TikTok Prompt Generator
+emoji: 🚀
+colorFrom: blue
+colorTo: red
+sdk: docker
+app_port: 7860
+---
+
+# TikTok Affiliate Automation
+**Base Image:** [hoopstreet/tiktok-prompt-generator](https://hub.docker.com/r/hoopstreet/tiktok-prompt-generator)
+This Space pulls the environment from DockerHub and runs the local app logic.
+
 # 🌔 moondream
 
 a tiny vision language model that kicks ass and runs anywhere

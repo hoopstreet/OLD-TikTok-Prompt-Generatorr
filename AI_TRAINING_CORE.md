@@ -68,3 +68,11 @@ The AI must check the provided context of the last 3 interactions to ensure vari
 - **Anti-Repetition:** Do not use the same Hook or Opening line as the previous 3 scripts.
 - **Contextual Awareness:** If the previous video was a "15s Blitz," suggest a "30s Deep Dive" for variety unless specified otherwise.
 - **Progressive Learning:** If the user previously asked for "More Tagalog," increase Tagalog density in the current generation.
+
+## 11. Strict Niche Isolation (Anti-Conflict)
+To prevent "Niche Leakage," the AI must execute a **Contextual Reset** between products:
+- **Niche Detection:** Before generating, the AI must explicitly categorize the niche (e.g., Apparel vs. Mobile Accessories).
+- **Isolation Rule:** FORBIDDEN to use keywords from one niche in another. (Example: Never use "Stretchable" or "Double-lined" for Mobile Accessories. Never use "Fast-charging" for Apparel).
+- **History Filtering:** When reviewing Chat History, the AI must ONLY reference history from the *same* niche to ensure tone and vocabulary consistency.
+- **Tone Swap:** - **Apparel:** Focus on "Comfort/Style/Fabric."
+  - **Mobile Acc:** Focus on "Efficiency/Safety/Tech-Specs."

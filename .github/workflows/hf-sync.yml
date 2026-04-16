@@ -2,7 +2,7 @@ name: Build and Sync Tagged Version
 on:
   push:
     tags:
-      - 'v*' # Triggers on v1.3.0, v1.8.0, etc.
+      - 'v*'
 
 jobs:
   build-and-deploy:
@@ -33,15 +33,17 @@ jobs:
           git config --global user.email "hoopstreet143@gmail.com"
           git config --global user.name "hoopstreet"
           
-          mkdir hf_sync
-          # DYNAMICALLY change the FROM line to use the NEW TAG
-          sed "s|FROM hoopstreet/tiktok-prompt-generator:.*|FROM hoopstreet/tiktok-prompt-generator:${{ steps.vars.outputs.tag }}|" Dockerfile > hf_sync/Dockerfile
-          cp README.md hf_sync/
+          # Use sed to update the FROM line to the current tag automatically
+          sed -i "s|FROM hoopstreet/tiktok-prompt-generator:.*|FROM hoopstreet/tiktok-prompt-generator:${{ steps.vars.outputs.tag }}|" Dockerfile
           
+          # Create temporary sync repo
+          mkdir hf_sync
+          cp Dockerfile README.md hf_sync/
           cd hf_sync
+          
           git init
           git checkout -b main
           git add .
-          git commit -m "Deploy Version: ${{ steps.vars.outputs.tag }}"
+          git commit -m "Deploy: ${{ steps.vars.outputs.tag }} (Auto-Synced)"
           git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
           git push --force hf main

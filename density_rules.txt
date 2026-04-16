@@ -1,0 +1,5 @@
+Visual Density Rules:
+- 15 seconds: Exactly 5 shots.
+- 30 seconds: Exactly 10 shots.
+- 45 seconds: Exactly 15 shots.
+- Dialogue: Taglish only. Realistic human tone. No store names.

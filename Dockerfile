@@ -2,9 +2,9 @@
 FROM hoopstreet/tiktok-prompt-generator:latest
 
 # We use USER root
-# Build Version: 1.7.1 to ensure we can handle any file permissions inside the container
+# Build Version: 1.7.2 to ensure we can handle any file permissions inside the container
 USER root
-# Build Version: 1.7.1
+# Build Version: 1.7.2
 WORKDIR /app
 
 # Ensure the app starts on the correct port for Hugging Face

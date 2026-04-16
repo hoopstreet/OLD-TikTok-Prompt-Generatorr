@@ -27,3 +27,9 @@ Every generation request must output exactly four cards:
 
 ## 5. Universal Call-To-Action (CTA)
 Always focus the CTA on the product value and the urgency to buy, directing the user to the link/basket without hardcoding store names.
+
+## 6. Database Column Mapping (Final Output)
+The AI must provide a final section formatted for direct database insertion:
+1. **positive_prompt**: Shot-by-shot visual and dialogue.
+2. **negative_prompt**: Standard quality-control exclusion list.
+3. **final_title**: SEO-optimized title (50-80 chars) + 5 relevant hashtags.

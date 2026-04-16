@@ -84,3 +84,9 @@ When generating the **positive_prompt**, the AI must include technical camera me
 - **Lighting Keywords:** Use "Soft Studio Lighting," "Natural Sunlight," or "Neon Glow" for tech.
 - **Resolution Cues:** Every description must start with "High-detail, 4k, vertical 9:16 aspect ratio."
 - **Shot Framing:** Explicitly state "Close-up (CU)," "Medium Shot (MS)," or "Macro Shot" to guide the video generator's lens.
+
+## 13. Shot-Specific Negative Prompts (Consistency Lock)
+To prevent glitches and maintain product integrity across scenes, the AI must provide a matching Negative Prompt for EVERY shot:
+- **1-to-1 Mapping:** If there are 5 Positive Shots, there must be 5 corresponding Negative Prompts.
+- **Scene Continuity:** Each Negative Prompt must explicitly forbid changes to previously established product features (e.g., "do not change logo position," "do not alter fabric color").
+- **Error Mitigation:** Include technical "Anti-Glitch" keywords specific to that shot's camera movement (e.g., if it's a Pan shot, negative prompt should include "no motion blur, no frame tearing").

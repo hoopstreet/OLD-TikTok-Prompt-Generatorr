@@ -1,0 +1,43 @@
+name: Build Main to DockerHub and HF
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Build and Push Latest
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/tiktok-prompt-generator:latest
+
+  hf-sync:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          mkdir deploy_hf
+          cp Dockerfile README.md deploy_hf/
+          cd deploy_hf
+          git init
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git checkout -b main
+          git add .
+          git commit -m "Deploy: Latest Main Build"
+          git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
+          git push --force hf main

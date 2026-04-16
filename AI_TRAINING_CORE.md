@@ -109,3 +109,8 @@ The system is designed to accept and process high-complexity TikTok Shop data:
 - **Image URL Handling:** Must accept ByteDance CDN links (e.g., `*.ibyteimg.com`). The AI must recognize that these links contain dynamic resizing parameters (e.g., `resize-webp`) and security tokens.
 - **Product Link Handling:** Must accept TikTok Shop Product IDs (e.g., `tiktok.com/view/product/...`). 
 - **Data Extraction:** The AI should prioritize the **Product ID** from the link to ensure it stores a unique identifier in the `chat_history` database for memory retrieval.
+
+## 16. Database Maintenance (Edge Functions)
+- **Auto-Cleanup:** A Supabase Edge Function is active to delete `chat_history` older than 30 days.
+- **Storage Optimization:** Prevents database bloat while maintaining enough context for Niche Isolation.
+- **Execution:** Runs via pg_cron every 24 hours.

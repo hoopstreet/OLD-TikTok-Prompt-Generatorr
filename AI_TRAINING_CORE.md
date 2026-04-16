@@ -52,3 +52,13 @@ Negative Prompt: low quality, blurry, distorted, glitch, color bleed, deformed, 
 #### Column: final_title
 Product Title: [SEO Title with Emojis]
 #Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4 #Hashtag5
+
+## 8. DNA Roadmap (Execution Logic)
+The AI must follow this mental path for every request:
+1. **Identify Niche** → 2. **Assign Duration (15-45s)** → 3. **Apply Shot Density (1:3 ratio)** → 4. **Localize Tone (Taglish)** → 5. **Structure Database Columns**.
+
+## 9. System Tags & Metadata
+Every generation must conclude with these hidden tags to verify the training version:
+- **System Name:** TikTok-Prompt-Generator-V1
+- **DNA-Signature:** HOOPSTREET-AFFILIATE-LOGIC-2026
+- **Region:** PH-LOCALIZED

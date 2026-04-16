@@ -17,45 +17,57 @@ model_id = "vikhyatk/moondream2"
 model = Moondream.from_pretrained(model_id).to("cpu").eval()
 
 def get_memory_and_training():
-    # Pull training materials
     train_data = supabase.table("training_materials").select("content").execute()
     train_context = "\n".join([item['content'] for item in train_data.data])
     
-    # Pull last 3 chat interactions for memory
     history_data = supabase.table("chat_history").select("user_input,ai_response").order("created_at", desc=True).limit(3).execute()
-    history_context = "\n".join([f"User: {h['user_input']}\nAI: {h['ai_response']}" for h in history_data.data])
+    history_context = "\n".join([f"Input: {h['user_input']}\nAI: {h['ai_response']}" for h in history_data.data])
     
     return train_context, history_context
 
-def process_tiktok_request(product_details, image_url):
+def process_tiktok_request(product_url, product_title, about_this_product, product_description, image_url):
     train_ctx, mem_ctx = get_memory_and_training()
     
     # Analyze Image via Moondream
     response = requests.get(image_url)
     image = Image.open(BytesIO(response.content))
     image_embeds = model.encode_image(image)
-    image_description = model.answer_question(image_embeds, "Describe this product and its key features for a TikTok ad.", None)
+    image_description = model.answer_question(image_embeds, "Describe this product's appearance for a TikTok ad.", None)
     
-    # Create Final Prompt
-    prompt = f"Training Info: {train_ctx}\nPast Memory: {mem_ctx}\nProduct: {product_details}\nVisuals: {image_description}\n\nTask: Create a viral TikTok script."
+    # Construct a high-detail prompt for the AI
+    detailed_input = f"Title: {product_title}\nAbout: {about_this_product}\nDescription: {product_description}\nURL: {product_url}"
     
-    # Simulate Script Generation (You can plug in an LLM here or use Moondream for text)
-    final_script = f"Generated Script for {product_details}: " + model.answer_question(image_embeds, prompt, None)
+    prompt = (
+        f"Style Guide: {train_ctx}\n"
+        f"Memory: {mem_ctx}\n"
+        f"Product Info: {detailed_input}\n"
+        f"Visual Analysis: {image_description}\n\n"
+        "Task: Generate a high-converting TikTok Affiliate script with a hook, body, and CTA."
+    )
+    
+    # Generate Script
+    final_script = model.answer_question(image_embeds, prompt, None)
     
     # Save to Supabase Chat History
     supabase.table("chat_history").insert({
-        "user_input": product_details,
+        "user_input": product_title,
         "ai_response": final_script
     }).execute()
     
     return final_script
 
-# Gradio Interface
+# Gradio Interface with your 5 specific fields
 demo = gr.Interface(
     fn=process_tiktok_request,
-    inputs=[gr.Textbox(label="Product Details"), gr.Textbox(label="Image URL")],
+    inputs=[
+        gr.Textbox(label="Product URL"),
+        gr.Textbox(label="Product Title"),
+        gr.Textbox(label="About This Product"),
+        gr.Textbox(label="Product Description"),
+        gr.Textbox(label="Image URL")
+    ],
     outputs=gr.Textbox(label="Viral TikTok Script"),
-    title="TikTok Prompt Generator (Vision + Memory)"
+    title="TikTok Affiliate Professional Generator"
 )
 
 if __name__ == "__main__":

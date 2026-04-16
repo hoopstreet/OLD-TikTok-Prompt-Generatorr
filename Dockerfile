@@ -10,3 +10,4 @@ WORKDIR /app
 # Ensure the app starts on the correct port for Hugging Face
 EXPOSE 7860
 CMD ["python", "app.py"]
+# Forced Refresh: Thu Apr 16 22:01:14 UTC 2026

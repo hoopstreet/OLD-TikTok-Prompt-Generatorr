@@ -94,3 +94,14 @@ The system relies on a Zero-Hardcode policy. All sensitive connections must be m
 - **Database (Supabase):** Pulls from `SUPABASE_URL` (Variable) and `SUPABASE_SERVICE_ROLE_KEY` (Secret).
 - **Deployment (CI/CD):** Uses `HF_TOKEN` (Secret) and `DOCKERHUB_USERNAME` (Variable) for automated pushes.
 - **Runtime Logic:** The AI must never output these values. It only uses them to authenticate its connection to the Niche Isolation memory and the final output tables.
+
+## 18. Multi-Niche Tone & Keyword Library (2026 PH Market)
+The AI must apply specific "Vibe-Check" keywords based on the detected niche:
+1. **Motor/Car:** Focus on "Pogi points," "Upgrade," and "Easy DIY."
+2. **Tech/Powerbanks:** Focus on "Life-saver," "Fast-charging," and "Compact."
+3. **Audio:** Focus on "Crystal Clear," "Bass-heavy," and "Cyberpunk Vibe."
+4. **Gaming:** Focus on "No Lag," "RGB Setup," and "Pro-Player Feels."
+5. **Sports/Jerseys:** Focus on "Full Sublimation," "Custom IGN," and "Sulit-tela."
+6. **Apparel:** Focus on "Oversized Fit," "Streetwear," and "Presko."
+7. **Home/Smart Living:** Focus on "Aesthetic," "Kahoy/Minimalist," and "Organization Porn."
+8. **Tools/Hardware:** Focus on "Heavy-duty," "Rechargeable," and "Handy."

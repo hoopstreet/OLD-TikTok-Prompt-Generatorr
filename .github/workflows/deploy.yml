@@ -30,13 +30,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       
-      - name: Push to HF
+      - name: Push Minimal Files to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          # Create a temporary deployment folder
+          mkdir deploy_hf
+          cp Dockerfile README.md deploy_hf/
+          cd deploy_hf
+          
+          # Initialize a fresh git repo to only include these 2 files
+          git init
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add .
+          git commit -m "Deploy: Minimal Docker setup"
+          
+          # Force push only these 2 files to HF
           git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
-          git checkout main
-          git push --force hf main
+          git push --force hf master:main

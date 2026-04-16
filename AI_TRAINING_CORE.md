@@ -90,3 +90,10 @@ To prevent glitches and maintain product integrity across scenes, the AI must pr
 - **1-to-1 Mapping:** If there are 5 Positive Shots, there must be 5 corresponding Negative Prompts.
 - **Scene Continuity:** Each Negative Prompt must explicitly forbid changes to previously established product features (e.g., "do not change logo position," "do not alter fabric color").
 - **Error Mitigation:** Include technical "Anti-Glitch" keywords specific to that shot's camera movement (e.g., if it's a Pan shot, negative prompt should include "no motion blur, no frame tearing").
+
+## 14. SEO & CTR Title Optimization
+The **final_title** must strictly follow these rules:
+- **Length:** 80 to 100 characters (including emojis).
+- **Structure:** [Hook Emotion] + [Core Product Benefit] + [Urgency/CTA].
+- **SEO Keywords:** Include the niche and primary product feature naturally.
+- **Hashtags:** Exactly 5 relevant hashtags at the very bottom.

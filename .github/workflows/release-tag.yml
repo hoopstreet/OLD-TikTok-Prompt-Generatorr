@@ -33,12 +33,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push
+        # We only build if it is a Tag push to avoid 'latest' pollution
+        if: startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: |
-            ${{ vars.DOCKERHUB_USERNAME }}/tiktok-prompt-generator:${{ steps.vars.outputs.tag }}
-            ${{ vars.DOCKERHUB_USERNAME }}/tiktok-prompt-generator:latest
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/tiktok-prompt-generator:${{ steps.vars.outputs.tag }}
 
       - name: Auto-Update GitHub Dockerfile Version
         if: startsWith(github.ref, 'refs/tags/')
@@ -48,12 +48,13 @@ jobs:
           git checkout main
           git pull origin main --rebase
           
-          # Update FROM line and Build Version comments
+          # Update FROM line specifically to the TAG version
           sed -i "s|FROM .*/tiktok-prompt-generator:.*|FROM ${{ vars.DOCKERHUB_USERNAME }}/tiktok-prompt-generator:${{ steps.vars.outputs.tag }}|" Dockerfile
+          
           CLEAN_TAG=$(echo "${{ steps.vars.outputs.tag }}" | sed 's/^v//')
           sed -i "s/# Build Version: .*/# Build Version: $CLEAN_TAG/" Dockerfile
           sed -i "s/# Forced Refresh: .*/# Forced Refresh: $(date)/" Dockerfile
           
           git add Dockerfile
-          git commit -m "Infra: Synced Dockerfile to Tag ${{ steps.vars.outputs.tag }}"
+          git commit -m "Infra: Pinned Dockerfile to Tag ${{ steps.vars.outputs.tag }}"
           git push origin main

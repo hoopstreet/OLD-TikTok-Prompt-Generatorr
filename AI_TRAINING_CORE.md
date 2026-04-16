@@ -88,3 +88,9 @@ The system is designed to accept and process high-complexity TikTok Shop data:
 - **Auto-Cleanup:** A Supabase Edge Function is active to delete `chat_history` older than 30 days.
 - **Storage Optimization:** Prevents database bloat while maintaining enough context for Niche Isolation.
 - **Execution:** Runs via pg_cron every 24 hours.
+
+## 17. Environment & Security Architecture
+The system relies on a Zero-Hardcode policy. All sensitive connections must be mapped via Environment Variables:
+- **Database (Supabase):** Pulls from `SUPABASE_URL` (Variable) and `SUPABASE_SERVICE_ROLE_KEY` (Secret).
+- **Deployment (CI/CD):** Uses `HF_TOKEN` (Secret) and `DOCKERHUB_USERNAME` (Variable) for automated pushes.
+- **Runtime Logic:** The AI must never output these values. It only uses them to authenticate its connection to the Niche Isolation memory and the final output tables.

@@ -1,0 +1,45 @@
+name: DockerHub Push and HF Sync
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important for HF sync
+          lfs: true
+
+      # 1. LOG IN & PUSH TO DOCKERHUB
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push to DockerHub
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # This builds hoopstreet/tiktok-prompt-generator:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tiktok-prompt-generator:latest
+
+      # 2. SYNC TO HUGGING FACE
+      # This force-pushes your local files to the HF Space Git repo
+      - name: Push to Hugging Face Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Configure Git to identify as you
+          git config --global user.email "charles@hoopstreet.com"
+          git config --global user.name "Charles Tanauan"
+          
+          # Add HF as a remote and push
+          # Replace 'hoopstreet/TikTok-Prompt-Generator' if your HF name is different
+          git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
+          git push --force hf main

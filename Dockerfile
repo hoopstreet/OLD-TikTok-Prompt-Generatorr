@@ -1,34 +1,10 @@
-# Using standard Python base
-FROM python:3.10-slim
+# This tells Hugging Face to pull your pre-built image from DockerHub
+FROM ${DOCKERHUB_USERNAME}/tiktok-prompt-generator:latest
 
-# Install system dependencies for Moondream AND Image Compilation (Pillow-SIMD)
-RUN apt-get update && apt-get install -y \
-    git \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    gcc \
-    python3-dev \
-    zlib1g-dev \
-    libjpeg-dev \
-    libpng-dev \
-    && rm -rf /var/lib/apt/lists/*
-
+# We use USER root to ensure we can handle any file permissions inside the container
+USER root
 WORKDIR /app
 
-# Upgrade pip first to handle modern wheels
-RUN pip install --upgrade pip
-
-# Install requirements
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy everything else
-COPY . .
-
-# Ensure HF permissions
-RUN chown -R 1000:1000 /app
-USER 1000
-
+# Ensure the app starts on the correct port for Hugging Face
 EXPOSE 7860
 CMD ["python", "app.py"]

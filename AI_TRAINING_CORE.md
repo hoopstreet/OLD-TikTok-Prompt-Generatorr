@@ -77,3 +77,10 @@ To prevent "Niche Leakage," the AI must execute a **Contextual Reset** between p
 - **History Filtering:** When reviewing Chat History, the AI must ONLY reference history from the *same* niche to ensure tone and vocabulary consistency.
 - **Tone Swap:** - **Apparel:** Focus on "Comfort/Style/Fabric."
   - **Mobile Acc:** Focus on "Efficiency/Safety/Tech-Specs."
+
+## 12. Video Engine Directives (AI Video Compatibility)
+When generating the **positive_prompt**, the AI must include technical camera metadata in the [Visual Description] for every shot:
+- **Movement Keywords:** Use "Cinematic Pan," "Dynamic Zoom-in," "Handheld POV shake," or "Slow-motion reveal."
+- **Lighting Keywords:** Use "Soft Studio Lighting," "Natural Sunlight," or "Neon Glow" for tech.
+- **Resolution Cues:** Every description must start with "High-detail, 4k, vertical 9:16 aspect ratio."
+- **Shot Framing:** Explicitly state "Close-up (CU)," "Medium Shot (MS)," or "Macro Shot" to guide the video generator's lens.

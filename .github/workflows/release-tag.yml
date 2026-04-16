@@ -35,19 +35,28 @@ jobs:
           git config --global user.name "hoopstreet"
           git checkout main
           git pull origin main --rebase
+          
+          # 1. Update the FROM line
           sed -i "s|FROM hoopstreet/tiktok-prompt-generator:.*|FROM hoopstreet/tiktok-prompt-generator:${{ steps.vars.outputs.tag }}|" Dockerfile
+          
+          # 2. Update all "Build Version" comments to match the tag
+          # This removes the 'v' (if present) for the comment to look clean
+          CLEAN_TAG=$(echo "${{ steps.vars.outputs.tag }}" | sed 's/^v//')
+          sed -i "s/# Build Version: .*/# Build Version: $CLEAN_TAG/" Dockerfile
+          
+          # 3. Update the Forced Refresh timestamp
+          sed -i "s/# Forced Refresh: .*/# Forced Refresh: $(date)/" Dockerfile
+          
           git add Dockerfile
-          git commit -m "Infra: Auto-update Dockerfile to ${{ steps.vars.outputs.tag }}"
+          git commit -m "Infra: Auto-update Dockerfile to ${{ steps.vars.outputs.tag }} and version comments"
           git push origin main
 
       - name: Sync to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Wait 10 seconds to let the main branch push settle
           sleep 10
           mkdir hf_sync
-          # Pull the LATEST Dockerfile we just committed above
           cp Dockerfile README.md hf_sync/
           cd hf_sync
           git init
@@ -55,7 +64,6 @@ jobs:
           git config user.email "hoopstreet143@gmail.com"
           git checkout -b main
           git add .
-          git commit -m "Deploy: ${{ steps.vars.outputs.tag }} (Final Sync)"
+          git commit -m "Deploy: ${{ steps.vars.outputs.tag }} (Synced Versioning)"
           git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
-          # FORCE push to ensure HF is overwritten with the TAG version
           git push --force hf main

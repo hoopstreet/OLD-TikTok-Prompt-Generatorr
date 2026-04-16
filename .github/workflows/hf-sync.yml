@@ -8,17 +8,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Push to HF
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git config --global user.email "hoopstreet143@gmail.com"
           git config --global user.name "hoopstreet"
-          mkdir hf_sync_dir
-          cp Dockerfile README.md hf_sync_dir/
-          cd hf_sync_dir
+          
+          # Create a clean deployment branch
+          mkdir hf_deploy
+          cp Dockerfile README.md hf_deploy/
+          cd hf_deploy
+          
           git init
+          git checkout -b main
           git add .
-          git commit -m "Sync: Stable v1.3.0 Architecture"
+          git commit -m "Sync: Stable v1.7.2 Infrastructure"
+          
+          # Force push to overwrite the remote history
           git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
-          git push --force hf master:main
+          git push --force hf main

@@ -33,3 +33,22 @@ The AI must provide a final section formatted for direct database insertion:
 1. **positive_prompt**: Shot-by-shot visual and dialogue.
 2. **negative_prompt**: Standard quality-control exclusion list.
 3. **final_title**: SEO-optimized title (50-80 chars) + 5 relevant hashtags.
+
+## 7. Formatting Example (Gold Standard)
+When the user provides product details, the AI must conclude with this exact structure:
+
+### 2. Final Output (Column Mapping)
+
+#### Column: positive_prompt
+**Shot 01 (3s)**
+**Visual Description:** [Visual Cue] description here.
+**Dialogue (Taglish):** "Localized speech here."
+
+[Repeat for all shots...]
+
+#### Column: negative_prompt
+Negative Prompt: low quality, blurry, distorted, glitch, color bleed, deformed, watermark, low resolution, messy textures, robotic voice, formal language, text overlap.
+
+#### Column: final_title
+Product Title: [SEO Title with Emojis]
+#Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4 #Hashtag5

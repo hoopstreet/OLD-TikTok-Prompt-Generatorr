@@ -5,50 +5,64 @@ from PIL import Image
 import requests
 from io import BytesIO
 from supabase import create_client
-from moondream.torch.hf_moondream import Moondream
+from transformers import AutoConfig, AutoModelForCausalLM
+# We import the local class as a fallback
+try:
+    from moondream.torch.hf_moondream import Moondream
+except ImportError:
+    Moondream = None
 
 # 1. Setup Supabase
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 supabase = create_client(url, key)
 
-# 2. Setup Moondream (Vision Engine)
+# 2. Setup Moondream (Vision Engine) with v4.50+ Compatibility Patch
 model_id = "vikhyatk/moondream2"
-model = Moondream.from_pretrained(model_id).to("cpu").eval()
+
+# PRE-LOAD CONFIG TO FIX ATTRIBUTE ERROR
+config = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+if not hasattr(config, "pad_token_id"):
+    config.pad_token_id = config.eos_token_id
+
+# Load model using the patched config
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, 
+    config=config, 
+    trust_remote_code=True
+).to("cpu").eval()
 
 def get_memory_and_training():
-    train_data = supabase.table("training_materials").select("content").execute()
-    train_context = "\n".join([item['content'] for item in train_data.data])
-    
-    history_data = supabase.table("chat_history").select("user_input,ai_response").order("created_at", desc=True).limit(3).execute()
-    history_context = "\n".join([f"Input: {h['user_input']}\nAI: {h['ai_response']}" for h in history_data.data])
-    
-    return train_context, history_context
+    try:
+        train_data = supabase.table("training_materials").select("content").execute()
+        train_context = "\n".join([item['content'] for item in train_data.data])
+        
+        history_data = supabase.table("chat_history").select("user_input,ai_response").order("created_at", desc=True).limit(3).execute()
+        history_context = "\n".join([f"Input: {h['user_input']}\nAI: {h['ai_response']}" for h in history_data.data])
+        return train_context, history_context
+    except:
+        return "", ""
 
 def process_tiktok_request(product_url, product_title, about_this_product, product_description, image_url):
     train_ctx, mem_ctx = get_memory_and_training()
     
-    # Analyze Image via Moondream
     response = requests.get(image_url)
     image = Image.open(BytesIO(response.content))
+    
+    # Analyze Image
     image_embeds = model.encode_image(image)
     image_description = model.answer_question(image_embeds, "Describe this product's appearance for a TikTok ad.", None)
-    
-    # Construct a high-detail prompt for the AI
-    detailed_input = f"Title: {product_title}\nAbout: {about_this_product}\nDescription: {product_description}\nURL: {product_url}"
     
     prompt = (
         f"Style Guide: {train_ctx}\n"
         f"Memory: {mem_ctx}\n"
-        f"Product Info: {detailed_input}\n"
-        f"Visual Analysis: {image_description}\n\n"
-        "Task: Generate a high-converting TikTok Affiliate script with a hook, body, and CTA."
+        f"Product Info: {product_title}\n"
+        f"Visual Analysis: {image_description}\n"
+        "Task: Generate a high-converting TikTok Affiliate script."
     )
     
-    # Generate Script
     final_script = model.answer_question(image_embeds, prompt, None)
     
-    # Save to Supabase Chat History
     supabase.table("chat_history").insert({
         "user_input": product_title,
         "ai_response": final_script
@@ -56,18 +70,11 @@ def process_tiktok_request(product_url, product_title, about_this_product, produ
     
     return final_script
 
-# Gradio Interface with your 5 specific fields
 demo = gr.Interface(
     fn=process_tiktok_request,
-    inputs=[
-        gr.Textbox(label="Product URL"),
-        gr.Textbox(label="Product Title"),
-        gr.Textbox(label="About This Product"),
-        gr.Textbox(label="Product Description"),
-        gr.Textbox(label="Image URL")
-    ],
-    outputs=gr.Textbox(label="Viral TikTok Script"),
-    title="TikTok Affiliate Professional Generator"
+    inputs=[gr.Textbox(label="URL"), gr.Textbox(label="Title"), gr.Textbox(label="About"), gr.Textbox(label="Desc"), gr.Textbox(label="Img")],
+    outputs=gr.Textbox(label="Script"),
+    title="TikTok Affiliate Pro"
 )
 
 if __name__ == "__main__":

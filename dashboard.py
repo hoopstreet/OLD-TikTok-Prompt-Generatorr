@@ -60,3 +60,19 @@ fo["All", "Winner", "New", "Posted"]["All", "Winner", "New", "Posted"]["All", "W
 if st.button(f"Mark as Posted", key=f"post_btn_{idx}"):
     # Logic to move from Winner -> Posted
     st.toast(f"Product {item['product_id']} moved to archive!")
+
+# --- EXPORT LOGIC ---
+st.sidebar.divider()
+if st.sidebar.button("📊 Export Winners to CSV"):
+    winners = [d for d in data if d.get("status") == "Winner"]
+    if winners:
+        df_winners = pd.DataFrame(winners)
+        csv = df_winners.to_csv(index=False).encode('utf-8')
+        st.sidebar.download_button(
+            label="📥 Download Winners.csv",
+            data=csv,
+            file_name="hoopstreet_winners.csv",
+            mime="text/csv",
+        )
+    else:
+        st.sidebar.warning("No Winners to export yet!")

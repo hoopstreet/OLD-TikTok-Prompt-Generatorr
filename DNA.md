@@ -135,3 +135,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 ## 26. PERFORMANCE & SCALABILITY (PAGINATION)
 * **Optimization:** Implemented client-side pagination to ensure fluid UI performance on mobile devices even with 100+ records.
 * **Volume Ready:** The system is now baseline-tested for "Stress Batches" of 100 concurrent URLs.
+
+---
+
+## 30. HYBRID AUTHENTICATION LOGIC (v1.8.4)
+* **Status:** Workflow updated to support hybrid credential storage.
+* **Logic:** DOCKERHUB_USERNAME sourced from 'vars' context; DOCKERHUB_TOKEN sourced from 'secrets' context.
+* **Result:** Build-and-Push authorized for automated deployment.

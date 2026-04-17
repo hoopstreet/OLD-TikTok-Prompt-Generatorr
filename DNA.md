@@ -32,3 +32,9 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 ## 12. DEPENDENCY LOCKING (STABILITY)
 * **Transformers Policy:** Must be pinned to `v4.40.0` to maintain compatibility with Moondream2's custom Phi architecture.
 * **Reasoning:** Newer versions (v4.50+) introduce breaking changes to `GenerationMixin` and `pad_token_id` requirements.
+
+---
+
+## 12. DEPENDENCY LOCKING (STABILITY)
+* **Transformers Policy:** Must be pinned to `v4.40.0` to maintain compatibility with Moondream2's custom Phi architecture.
+* **Reasoning:** Newer versions (v4.50+) introduce breaking changes to `GenerationMixin` and `pad_token_id` requirements.

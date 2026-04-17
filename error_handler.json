@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=❌ **TikTok Automation Error**\n\nProduct ID: {{ $node[\"HF API Request\"].json[\"product_id\"] }}\nError: {{ $node[\"HF API Request\"].json[\"error\"] }}",
+        "additionalFields": {}
+      },
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [750, 450]
+    }
+  ]
+}

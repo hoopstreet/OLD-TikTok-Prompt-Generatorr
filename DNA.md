@@ -61,3 +61,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Execution:** `inference.py` encapsulates image embedding and question-answering.
 * **Hardware:** Auto-detects CUDA/CPU; optimized for Hugging Face Free Tier (CPU) or T4 (GPU).
 * **Stability:** Uses local code trust to bypass `GenerationMixin` inheritance issues.
+
+---
+
+## 16. SCRAPER PROTOCOL (CDN RESOLUTION)
+* **Strategy:** Use regex to pivot from raw TikTok URL to the `ibyteimg.com` object store.
+* **Resizing:** Standardize on `480:480` resolution to balance Moondream inference speed with image detail.
+* **Security:** Use UA-spoofing if TikTok blocks the standard Python-requests agent.

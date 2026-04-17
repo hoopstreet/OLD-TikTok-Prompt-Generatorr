@@ -1,32 +1,18 @@
-name: Sync Minimalist Files to Hugging Face
+name: Sync to Hugging Face
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'Dockerfile'
-      - 'README.md'
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  deploy-to-hf:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Push to HF
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Push to Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          mkdir deploy_hf
-          cp Dockerfile README.md deploy_hf/
-          cd deploy_hf
-          
-          git init
-          git config user.name "hoopstreet"
-          git config user.email "hoopstreet143@gmail.com"
-          git checkout -b main
-          git add .
-          git commit -m "HF Sync: Minimal Docker/README update"
-          
-          git remote add hf https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator
-          git push --force hf main
+          git push --force https://hoopstreet:$HF_TOKEN@huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator main

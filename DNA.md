@@ -1,6 +1,6 @@
 # 🧬 THE DNA BLUEPRINT: PHOENIX ARCHITECTURE
 ## Project: TikTok-Prompt-Generator
-**Version:** v1.3.9-EXPANSION (Stable)
+**Version:** v1.4.0-EXPANSION (Stable)
 **Lead Developer:** hoopstreet
 **Contact:** hoopstreet143@gmail.com
 
@@ -35,35 +35,50 @@ We utilize a **Pinned-Version Architecture** to ensure that code logic on GitHub
 ## 3. THE DEPLOYMENT LOOP (OPERATIONAL PROTOCOL)
 Follow this exact sequence for every update to ensure zero downtime and zero configuration errors.
 
-### 3.1 Development (Local iSH)
+**3.1 Development (Local iSH)**
 ```bash
 git add .
 git commit -m "feat: [describe your change]"
 git push origin main
 ```
 
-### 3.2 Versioning (The Trigger)
+**3.2 Versioning (The Trigger)**
 ```bash
 git tag -a v1.X.X-EXPANSION -m "Release: [Brief description]"
 git push origin v1.X.X-EXPANSION
 ```
 
-### 3.3 Automated Chain Reaction
+**3.3 Automated Chain Reaction**
 1. **`release-tag.yml`**: Builds Docker image -> Pushes Tag -> Edits GitHub Dockerfile text.
 2. **`hf-sync.yml`**: Detects Dockerfile change -> Wipes HF files -> Force-pushes only Dockerfile & README.
 
 ---
 
-## 4. CHANGE LOG & ROADMAP
-* **v1.3.9 (CURRENT):** Removed `:latest` logic; enforced strict pinning; created DNA.md.
-* **Phase 2:** Automated TikTok URL Scraping to Supabase (Pending).
-* **Phase 3:** LTX-2 Turbo Video Generation Integration (Pending).
+## 4. TECHNICAL INPUT PARSING (URL HANDLING)
+The system is designed to accept and process high-complexity TikTok Shop data:
+* **Image URL Handling:** Must accept ByteDance CDN links (e.g., `*.ibyteimg.com`). Recognize dynamic resizing parameters (e.g., `resize-webp`) and security tokens.
+* **Product Link Handling:** Must accept TikTok Shop Product IDs (e.g., `tiktok.com/view/product/...`).
+* **Data Extraction:** Prioritize the **Product ID** to ensure a unique identifier in `chat_history` for memory retrieval.
 
 ---
 
-## 5. FAILURE RECOVERY (FIELD MANUAL)
+## 5. DATABASE MAINTENANCE (EDGE FUNCTIONS)
+* **Auto-Cleanup:** A Supabase Edge Function is active to delete `chat_history` older than 30 days.
+* **Storage Optimization:** Prevents database bloat while maintaining context for Niche Isolation.
+* **Execution:** Runs via `pg_cron` every 24 hours.
+
+---
+
+## 6. ENVIRONMENT & SECURITY ARCHITECTURE
+The system relies on a **Zero-Hardcode policy**.
+* **Database (Supabase):** Pulls from `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+* **Deployment (CI/CD):** Uses `HF_TOKEN` and `DOCKERHUB_USERNAME`.
+* **Runtime Logic:** AI must never output these values. They are for authentication to Niche Isolation memory and output tables only.
+
+---
+
+## 7. FAILURE RECOVERY (FIELD MANUAL)
 **Error: `[rejected] main -> main (fetch first)`**
-* **Cause:** The GitHub Action edited the Dockerfile on the server.
 * **Fix:** `git pull origin main --rebase` then `git push origin main`.
 
 ---

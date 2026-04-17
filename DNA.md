@@ -53,3 +53,11 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Endpoint:** `POST /process-tiktok`
 * **Background Processing:** Heavy Moondream inference is handled via `BackgroundTasks` to prevent n8n timeouts.
 * **n8n Protocol:** n8n should send a JSON body: `{"url": "TIKTOK_URL"}`.
+
+---
+
+## 15. VISION PROCESSING (MOONDREAM)
+* **Model:** Moondream2 (Revision: 2024-03-06).
+* **Execution:** `inference.py` encapsulates image embedding and question-answering.
+* **Hardware:** Auto-detects CUDA/CPU; optimized for Hugging Face Free Tier (CPU) or T4 (GPU).
+* **Stability:** Uses local code trust to bypass `GenerationMixin` inheritance issues.

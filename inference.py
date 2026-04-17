@@ -19,7 +19,7 @@ class MoondreamInference:
         ).to(self.device)
         self.model.eval()
 
-    def generate_prompt(self, image_url, query="Describe this product for a TikTok ad"):
+    def generate_prompt(self, image_url, query="Act as a viral TikTok Shop Influencer. Analyze this product image and list 3 high-energy selling points, its aesthetic appeal, and a target niche. Use catchy, affiliate-style language."):
         try:
             response = requests.get(image_url)
             image = Image.open(BytesIO(response.content))

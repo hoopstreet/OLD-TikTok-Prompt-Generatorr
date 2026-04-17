@@ -102,3 +102,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Interface:** Responsive Web UI for browsing AI-generated content.
 * **Architecture:** Directly queries Supabase; renders images and prompts in an expandable grid.
 * **Workflow:** Allows for rapid review and "winner" selection without database tools.
+
+---
+
+## 22. CONTENT CURATION & STATUS TRACKING
+* **Feature:** Added "Winner" tagging to identify high-potential affiliate products.
+* **UI:** Integrated a dedicated text area for one-tap copying of prompts on mobile devices.
+* **Workflow:** Move items from "New" (Scraped) to "Winner" (Ready for Video Generation).

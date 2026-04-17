@@ -116,3 +116,9 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Workflow:** New -> Winner -> Posted.
 * **Archive Logic:** "Posted" status allows filtering out active inventory to prevent content duplication.
 * **Optimization:** Streamlit UI now supports full lifecycle tracking from a single mobile view.
+
+---
+
+## 24. SEO & SOCIAL PREP (CAPTIONS + HASHTAGS)
+* **Intelligence Upgrade:** Moondream now generates a "Scroll-Stopper" caption and 5 trending hashtags per product.
+* **Format:** Structured output designed for direct copy-pasting into TikTok Studio or CapCut.

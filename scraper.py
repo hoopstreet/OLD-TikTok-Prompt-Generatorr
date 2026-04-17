@@ -2,7 +2,14 @@ import re
 import requests
 
 class TikTokScraper:
-    """Enhanced DNA Section 4: TikTok Shop Metadata Extraction"""
+    """Enhanced DNA Section 4 & 16: Mobile-Spoofed Extraction"""
+    
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1",
+        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.tiktok.com/"
+    }
     
     @staticmethod
     def extract_product_id(url):
@@ -10,17 +17,21 @@ class TikTokScraper:
         return match.group(1) if match else None
 
     @staticmethod
-    def get_product_image(url):
-        # In a real scenario, this involves header spoofing or using an API
-        # For this logic, we identify the high-res CDN pattern
-        # Logic: Extract ID and return a placeholder/scraped image link
+    def get_product_image_bytes(url):
         product_id = TikTokScraper.extract_product_id(url)
-        if product_id:
-            # Simulated high-res ByteDance CDN return
-            return f"https://p16-item-sign.ibyteimg.com/obj/tiktok-obj/{product_id}~tplv-resize:480:480.webp"
-        return None
+        if not product_id:
+            return None
+            
+        cdn_url = f"https://p16-item-sign.ibyteimg.com/obj/tiktok-obj/{product_id}~tplv-resize:480:480.webp"
+        
+        try:
+            # Use headers to bypass 403 Forbidden
+            response = requests.get(cdn_url, headers=TikTokScraper.HEADERS, timeout=10)
+            response.raise_for_status()
+            return response.content
+        except Exception as e:
+            print(f"Scraper Error: {e}")
+            return None
 
 if __name__ == "__main__":
-    test_url = "https://www.tiktok.com/view/product/123456789"
-    img = TikTokScraper.get_product_image(test_url)
-    print(f"Scraper ready. Image Target: {img}")
+    print("Scraper Spoofing Active. User-Agent: iPhone/Safari")

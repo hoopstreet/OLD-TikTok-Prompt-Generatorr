@@ -122,3 +122,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 ## 24. SEO & SOCIAL PREP (CAPTIONS + HASHTAGS)
 * **Intelligence Upgrade:** Moondream now generates a "Scroll-Stopper" caption and 5 trending hashtags per product.
 * **Format:** Structured output designed for direct copy-pasting into TikTok Studio or CapCut.
+
+---
+
+## 25. THE PRODUCTION BRIDGE (CSV EXPORT)
+* **Feature:** Bulk export of "Winner" status products into CSV format.
+* **Schema:** Export includes Product ID, Image URL, AI-Generated Prompt, Caption, and Hashtags.
+* **Utility:** Direct integration with batch video creation workflows (CapCut/Canva/Custom).

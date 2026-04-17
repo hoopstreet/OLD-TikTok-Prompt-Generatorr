@@ -27,3 +27,8 @@
 ### Added
 - **DNA Section 2 Expansion:** Explicitly documented the "Filtered Sync" logic to prevent future 10MB push rejections.
 - **Version Lock:** Enforced stricter mapping between Docker tags and HF pulls.
+
+## [v1.5.7-EXPANSION] - 2026-04-17
+### Fixed
+- **Runtime Error:** Fixed `AttributeError: 'PhiConfig' object has no attribute 'pad_token_id'` by pinning transformers to 4.40.0.
+- **DNA v1.5.7:** Added Dependency Locking section.

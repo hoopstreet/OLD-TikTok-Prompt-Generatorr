@@ -14,3 +14,11 @@
 - **iSH:** Connected (Control)
 - **GitHub:** Connected (CI/CD)
 - **Hugging Face:** Building (Deployment)
+
+## [v1.5.2-EXPANSION] - 2026-04-17
+### Added
+- **Automated Sync Bot:** Created `.github/workflows/hf-sync.yml` to bridge GitHub and Hugging Face.
+- **DNA v1.5.2:** Updated infrastructure versioning.
+
+### Fixed
+- **Manual Sync Gap:** Removed the need to manually push to Hugging Face Git; GitHub now handles mirroring via secret token.

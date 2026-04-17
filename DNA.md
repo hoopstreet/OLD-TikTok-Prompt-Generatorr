@@ -82,3 +82,9 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Fail-Safe:** Every failed inference or scraping attempt triggers a `db.log_event` in Supabase.
 * **External Alerting:** Integrated Telegram Webhook support in n8n to notify the user of 403 or 404 errors in real-time.
 * **Audit Trail:** The `automation_logs` table serves as the primary source of truth for debugging "Fresh zero zero" resets.
+
+---
+
+## 19. MULTI-FORMAT EXTRACTION (VIDEO & PRODUCT)
+* **Logic:** The scraper now attempts to resolve IDs from both direct Shop links and Video Share links.
+* **Unified Pipeline:** Whether a video or a product is provided, the system standardizes the ID to pull the high-res ByteDance CDN cover.

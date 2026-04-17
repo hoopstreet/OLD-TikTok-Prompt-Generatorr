@@ -29,6 +29,9 @@ async def process_tiktok(request: TikTokRequest, background_tasks: BackgroundTas
 
     return {"status": "accepted", "product_id": product_id}
 
+from inference import MoondreamInference
+engine = MoondreamInference()
+
 def run_inference_pipeline(product_id, url):
     # This will be where we call Moondream in the next step
     db.log_event("inference_start", "pending", {"id": product_id})

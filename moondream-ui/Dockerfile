@@ -1,31 +1,23 @@
 FROM python:3.10-slim
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    HOME=/home/user
-
-# Create a non-root user for Hugging Face compatibility
+# Setup user for Hugging Face
 RUN useradd -m -u 1000 user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 WORKDIR $HOME/app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+# Install git for any remote code dependencies
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt streamlit gradio transformers einops pillow
+# Copy original requirements and install
+COPY --chown=user requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY . .
-RUN chown -R user:user $HOME/app
+# Copy all the original source code we pulled
+COPY --chown=user . .
 
-USER user
-
-# Hugging Face Spaces default port
+# Expose the standard HF port
 EXPOSE 7860
 
-# Run the original Gradio UI
+# Run the original demo script (renamed to app.py)
 CMD ["python", "app.py"]

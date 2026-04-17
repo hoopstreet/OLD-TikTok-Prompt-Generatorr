@@ -1,6 +1,6 @@
-torch
-transformers
-einops
-pillow
-gradio
+torch --index-url https://download.pytorch.org/whl/cpu
+transformers>=4.36.0
 timm
+einops
+gradio
+pillow

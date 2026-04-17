@@ -22,3 +22,8 @@
 
 ### Fixed
 - **Manual Sync Gap:** Removed the need to manually push to Hugging Face Git; GitHub now handles mirroring via secret token.
+
+## [v1.5.5-EXPANSION] - 2026-04-17
+### Added
+- **DNA Section 2 Expansion:** Explicitly documented the "Filtered Sync" logic to prevent future 10MB push rejections.
+- **Version Lock:** Enforced stricter mapping between Docker tags and HF pulls.

@@ -76,3 +76,13 @@ if st.sidebar.button("📊 Export Winners to CSV"):
         )
     else:
         st.sidebar.warning("No Winners to export yet!")
+
+# --- PAGINATION ---
+items_per_page = 10
+total_pages = (len(data) // items_per_page) + 1
+page = st.sidebar.number_input("Page", min_value=1, max_value=total_pages, step=1)
+
+# Slice data for current page
+start_idx = (page - 1) * items_per_page
+end_idx = start_idx + items_per_page
+data_slice = data[start_idx:end_idx]

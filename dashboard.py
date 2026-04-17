@@ -33,3 +33,25 @@ else:
 
 if st.button("🔄 Refresh Data"):
     st.rerun()
+
+# New Feature: Winner Selection
+st.sidebar.header("Filter & Tools")
+status_filter = st.sidebar.selectbox("Filter by Status", ["All", "Winner", "New"])
+
+for idx, item in enumerate(data):
+    # Logic to handle status labels
+    is_winner = item.get("status") == "Winner"
+    
+    with cols[idx % len(cols)]:
+        if is_winner:
+            st.success("🏆 WINNER")
+        
+        st.image(item.get("image_url", "https://via.placeholder.com/480"), use_column_width=True)
+        
+        # Copy to Clipboard Button (Simulated via text area for mobile ease)
+        prompt_text = item.get("prompt", "")
+        st.text_area("Affiliate Prompt", prompt_text, height=100, key=f"text_{idx}")
+        
+        if st.button(f"Mark as Winner", key=f"btn_{idx}"):
+            # Here we would call db.update_product_status(item['product_id'], "Winner")
+            st.toast(f"Product {item['product_id']} marked as Winner!")

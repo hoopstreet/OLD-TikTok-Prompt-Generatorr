@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tiktok-trigger",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://huggingface.co/spaces/hoopstreet/TikTok-Prompt-Generator/process-tiktok",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"url\": \"{{[\"Webhook Trigger\"].json[\"body\"][\"url\"]}}\"}",
+        "options": {}
+      },
+      "name": "HF API Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [500, 300]
+    }
+  ]
+}

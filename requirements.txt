@@ -2,5 +2,8 @@ transformers==4.40.0
 torch
 torchvision
 einops
-flask
+fastapi
+uvicorn
+pydantic
+supabase
 requests

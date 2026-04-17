@@ -75,3 +75,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Spoofing Profile:** Identifies as `iPhone 15 / Safari` to ensure seamless CDN access.
 * **Prompt Strategy [Viral-V1]:** Moondream is forced into an "Influencer" persona to generate descriptive metadata that aligns with TikTok’s fast-paced visual style.
 * **Resiliency:** Implements a 10s timeout on all CDN requests to prevent pipeline hanging.
+
+---
+
+## 18. MONITORING & ERROR HANDLING
+* **Fail-Safe:** Every failed inference or scraping attempt triggers a `db.log_event` in Supabase.
+* **External Alerting:** Integrated Telegram Webhook support in n8n to notify the user of 403 or 404 errors in real-time.
+* **Audit Trail:** The `automation_logs` table serves as the primary source of truth for debugging "Fresh zero zero" resets.

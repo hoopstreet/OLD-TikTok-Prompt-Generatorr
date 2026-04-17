@@ -109,3 +109,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Feature:** Added "Winner" tagging to identify high-potential affiliate products.
 * **UI:** Integrated a dedicated text area for one-tap copying of prompts on mobile devices.
 * **Workflow:** Move items from "New" (Scraped) to "Winner" (Ready for Video Generation).
+
+---
+
+## 23. CONTENT LIFECYCLE MANAGEMENT
+* **Workflow:** New -> Winner -> Posted.
+* **Archive Logic:** "Posted" status allows filtering out active inventory to prevent content duplication.
+* **Optimization:** Streamlit UI now supports full lifecycle tracking from a single mobile view.

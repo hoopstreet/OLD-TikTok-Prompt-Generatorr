@@ -14,7 +14,7 @@ class TikTokRequest(BaseModel):
 
 @app.get("/")
 async def health():
-    return {"status": "Phoenix Architecture Online", "version": "v1.6.1"}
+    return {"status": "Phoenix Architecture Online", "version": "v1.6.6"}
 
 @app.post("/process-tiktok")
 async def process_tiktok(request: TikTokRequest, background_tasks: BackgroundTasks):

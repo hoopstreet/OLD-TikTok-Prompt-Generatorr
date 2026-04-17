@@ -95,3 +95,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Standard:** Support for asynchronous batching via `bulk_runner.py`.
 * **Concurrency:** FastAPI `BackgroundTasks` allow for fire-and-forget processing, enabling n8n to send 100+ requests without waiting for AI inference.
 * **Rate Limiting:** Implements a 1-second stagger to prevent webhook congestion.
+
+---
+
+## 21. VISUAL DASHBOARD (STREAMLIT)
+* **Interface:** Responsive Web UI for browsing AI-generated content.
+* **Architecture:** Directly queries Supabase; renders images and prompts in an expandable grid.
+* **Workflow:** Allows for rapid review and "winner" selection without database tools.

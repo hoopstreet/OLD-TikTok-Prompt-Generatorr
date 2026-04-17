@@ -1,6 +1,6 @@
 # 🧬 THE DNA BLUEPRINT: PHOENIX ARCHITECTURE
 ## Project: TikTok-Prompt-Generator
-**Version:** v1.4.1-EXPANSION (Stable)
+**Version:** v1.4.6-EXPANSION (Stable)
 **Lead Developer:** hoopstreet
 **Contact:** hoopstreet143@gmail.com
 
@@ -34,24 +34,12 @@ We utilize a Pinned-Version Architecture to ensure that GitHub, Docker Hub, and 
 
 ## 3. THE DEPLOYMENT LOOP (OPERATIONAL PROTOCOL)
 Follow this exact sequence for every update to ensure zero downtime.
-
-**3.1 Development (Local iSH)**
-```bash
-git add .
-git commit -m "feat: [describe change]"
-git push origin main
-```
-
-**3.2 Versioning (The Trigger)**
-```bash
-git tag -a v1.X.X-EXPANSION -m "Release: [Brief description]"
-git push origin v1.X.X-EXPANSION
-```
+**3.1 Development (Local iSH):** Add, Commit, Push to Main.
+**3.2 Versioning (The Trigger):** Tag and Push Tag to initiate Build/Sync.
 
 ---
 
 ## 4. TECHNICAL INPUT PARSING (URL HANDLING)
-The system is designed to accept and process high-complexity TikTok Shop data:
 * **Image URL Handling:** Must accept ByteDance CDN links (*.ibyteimg.com) and recognize dynamic resizing parameters (e.g., resize-webp).
 * **Product Link Handling:** Must accept TikTok Shop Product IDs (e.g., tiktok.com/view/product/...).
 * **Data Extraction:** Prioritize the Product ID for unique storage in chat_history.
@@ -73,6 +61,15 @@ The system is designed to accept and process high-complexity TikTok Shop data:
 ## 7. FAILURE RECOVERY (FIELD MANUAL)
 **Error: [rejected] main -> main (fetch first)**
 * **Fix:** `git pull origin main --rebase` then `git push origin main`.
+
+---
+
+## 8. MOBILE DEVELOPMENT PROTOCOL (iSH/iPhone)
+* **Zero Manual Edits:** AI must provide full code via `cat <<EOF` for direct terminal injection. No manual nano/vi editing required.
+* **Remote-First:** Code must focus on remoting to GitHub. Do not run heavy local processes (npm, etc.) to prevent iPhone memory hanging.
+* **Character Limits:** If code exceeds mobile paste limits, AI must split into Part 1, Part 2, etc.
+* **Automation:** All logic must be inserted/edited directly into target files via automated scripts.
+* **Project Focus:** All development must strictly target the **TikTok-Prompt-Generator**.
 
 ---
 **Last Updated:** April 17, 2026

@@ -26,3 +26,9 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Minimalist Footprint:** Contains ONLY Dockerfile and README.md.
 * **Clean Room Execution:** HF acts as a headless runner, pulling the versioned image from Docker Hub.
 * **Auto-Rebuild:** Triggered immediately when GitHub Actions push a version update to the HF repository.
+
+---
+
+## 12. DEPENDENCY LOCKING (STABILITY)
+* **Transformers Policy:** Must be pinned to `v4.40.0` to maintain compatibility with Moondream2's custom Phi architecture.
+* **Reasoning:** Newer versions (v4.50+) introduce breaking changes to `GenerationMixin` and `pad_token_id` requirements.

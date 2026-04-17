@@ -68,3 +68,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 * **Strategy:** Use regex to pivot from raw TikTok URL to the `ibyteimg.com` object store.
 * **Resizing:** Standardize on `480:480` resolution to balance Moondream inference speed with image detail.
 * **Security:** Use UA-spoofing if TikTok blocks the standard Python-requests agent.
+
+---
+
+## 17. IDENTITY & PROMPT ENGINEERING
+* **Spoofing Profile:** Identifies as `iPhone 15 / Safari` to ensure seamless CDN access.
+* **Prompt Strategy [Viral-V1]:** Moondream is forced into an "Influencer" persona to generate descriptive metadata that aligns with TikTok’s fast-paced visual style.
+* **Resiliency:** Implements a 10s timeout on all CDN requests to prevent pipeline hanging.

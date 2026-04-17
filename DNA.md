@@ -88,3 +88,10 @@ We utilize a Pinned-Version Architecture to ensure that code logic on GitHub, co
 ## 19. MULTI-FORMAT EXTRACTION (VIDEO & PRODUCT)
 * **Logic:** The scraper now attempts to resolve IDs from both direct Shop links and Video Share links.
 * **Unified Pipeline:** Whether a video or a product is provided, the system standardizes the ID to pull the high-res ByteDance CDN cover.
+
+---
+
+## 20. BATCH ORCHESTRATION (BULK PROCESSING)
+* **Standard:** Support for asynchronous batching via `bulk_runner.py`.
+* **Concurrency:** FastAPI `BackgroundTasks` allow for fire-and-forget processing, enabling n8n to send 100+ requests without waiting for AI inference.
+* **Rate Limiting:** Implements a 1-second stagger to prevent webhook congestion.

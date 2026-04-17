@@ -1,0 +1,6 @@
+torch
+transformers
+einops
+pillow
+gradio
+timm
